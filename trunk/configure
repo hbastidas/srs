@@ -607,6 +607,10 @@ echo 'Configure ok! '
 # create objs/logs for ffmpeg to write log.
 mkdir -p ${SRS_OBJS}/logs
 
+if [[ $SRS_CUDA == YES ]]; then
+    touch ${SRS_OBJS}/.srs_cuda_enabled
+fi
+
 #####################################################################################
 # configure summary
 #####################################################################################

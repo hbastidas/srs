@@ -194,6 +194,14 @@ jobs:
       # https://github.com/docker/setup-buildx-action
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@8c0edbc76e98fa90f69d9a2c020dcb50019dc325 # v2.2.1
+      - name: Check for CUDA flag
+        id: check_cuda
+        run: |
+          if [[ -f trunk/objs/.srs_cuda_enabled ]]; then
+            echo "DOCKER_IMAGE=nvidia/cuda:11.4.0-base-ubuntu20.04" >> $GITHUB_ENV
+          else
+            echo "DOCKER_IMAGE=ossrs/srs:ubuntu20" >> $GITHUB_ENV
+          fi
       ##################################################################################################################
       # Create main images for Docker
       - name: Login to docker hub
@@ -210,7 +218,7 @@ jobs:
             --output "type=image,push=true" \
             -t ossrs/srs:$SRS_TAG \
             --build-arg SRS_AUTO_PACKAGER=$PACKAGER \
-            --build-arg IMAGE=ossrs/srs:ubuntu20 \
+            --build-arg IMAGE=${{ env.DOCKER_IMAGE }} \
             --build-arg CONFARGS='--sanitizer=off --gb28181=on --rtsp=on' \
             -f Dockerfile .
       # Docker alias images

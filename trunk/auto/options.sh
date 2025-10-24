@@ -115,6 +115,7 @@ SRS_CROSS_BUILD_HOST=
 SRS_CROSS_BUILD_PREFIX=
 # For cache build
 SRS_BUILD_CACHE=YES
+SRS_CUDA=NO
 # Only support MacOS 10.12+ for clock_gettime, see https://github.com/ossrs/srs/issues/3978
 SRS_OSX_HAS_CLOCK_GETTIME=YES
 #
@@ -242,6 +243,7 @@ Experts:
   --debug-stats=on|off      Whether enable the debug stats, may hurt performance. Default: $(value2switch $SRS_DEBUG_STATS)
   --debug-nack-drop=on|off  Whether enable the debug nack drop, always drop the first number N packet. Default: $(value2switch $SRS_DEBUG_NACK_DROP)
   --gcov=on|off             Whether enable the GCOV for coverage. Default: $(value2switch $SRS_GCOV)
+  --with-cuda=on|off        Whether to enable CUDA for FFmpeg. Default: $(value2switch $SRS_CUDA)
   --log-verbose=on|off      Whether enable the log verbose level. Default: $(value2switch $SRS_LOG_VERBOSE)
   --log-info=on|off         Whether enable the log info level. Default: $(value2switch $SRS_LOG_INFO)
   --log-trace=on|off        Whether enable the log trace level. Default: $(value2switch $SRS_LOG_TRACE)
@@ -371,6 +373,7 @@ function parse_user_option() {
         --sanitizer)                    SRS_SANITIZER=$(switch2value $value) ;;
         --sanitizer-static)             SRS_SANITIZER_STATIC=$(switch2value $value) ;;
         --sanitizer-log)                SRS_SANITIZER_LOG=$(switch2value $value) ;;
+        --with-cuda)                    SRS_CUDA=$(switch2value $value) ;;
 
         --use-sys-ssl)                  SRS_USE_SYS_SSL=YES         ;;
         --sys-ssl)                      SRS_USE_SYS_SSL=$(switch2value $value) ;;

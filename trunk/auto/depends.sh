@@ -565,9 +565,15 @@ if [[ $SRS_FFMPEG_FIT == YES && $SRS_USE_SYS_FFMPEG == YES ]]; then
 fi
 if [[ $SRS_FFMPEG_FIT == YES && $SRS_USE_SYS_FFMPEG == NO ]]; then
     FFMPEG_CONFIGURE="env SRS_FFMPEG_FIT=on"
+    # PKG_CONFIG_PATH for external libs: opus and ffnvcodec (nv-codec-headers)
+    _PKGCFG_PATH="/usr/local/lib/pkgconfig"
     if [[ $SRS_FFMPEG_OPUS != YES ]]; then
-        FFMPEG_CONFIGURE="$FFMPEG_CONFIGURE PKG_CONFIG_PATH=${SRS_DEPENDS_LIBS}/opus/lib/pkgconfig"
+        _PKGCFG_PATH="${SRS_DEPENDS_LIBS}/opus/lib/pkgconfig:${_PKGCFG_PATH}"
     fi
+    FFMPEG_CONFIGURE="$FFMPEG_CONFIGURE PKG_CONFIG_PATH=${_PKGCFG_PATH}"
+    # Prepare optional CFLAGS/LDFLAGS for FFmpeg.
+    _FF_CFLAGS=""
+    _FF_LDFLAGS=""
     FFMPEG_CONFIGURE="$FFMPEG_CONFIGURE ./configure"
 
     # Disable all features, note that there are still some options need to be disabled.
@@ -607,48 +613,90 @@ if [[ $SRS_FFMPEG_FIT == YES && $SRS_USE_SYS_FFMPEG == NO ]]; then
     # Enable FFmpeg native MP3 decoder, which depends on dct.
     FFMPEG_OPTIONS="$FFMPEG_OPTIONS --enable-decoder=mp3 --enable-dct"
 
+    # Enable CUDA/NV codecs only on supported architectures.
+    if [[ $SRS_CUDA == YES ]]; then
+        CAN_ENABLE_CUDA=
+        (gcc -dM -E - </dev/null |grep -q '#define __x86_64 1') && CAN_ENABLE_CUDA=YES
+        (gcc -dM -E - </dev/null |grep -q '#define __aarch64__ 1') && CAN_ENABLE_CUDA=YES
+        if [[ $CAN_ENABLE_CUDA == YES ]]; then
+            # NVENC-only path for stability with ffmpeg-4-fit.
+            FFMPEG_OPTIONS="$FFMPEG_OPTIONS --enable-nvenc --enable-nonfree --enable-ffnvcodec --disable-cuda"
+            # Keep cuvid disabled; only remove the disables for nvenc/ffnvcodec and leave cuvid/nvdec/hwaccels as-is.
+            FFMPEG_OPTIONS="$(echo $FFMPEG_OPTIONS | sed 's/--disable-nvenc//')"
+            FFMPEG_OPTIONS="$(echo $FFMPEG_OPTIONS | sed 's/--disable-ffnvcodec//')"
+            # Allow hardware accels/devices if not explicitly disabled elsewhere.
+            FFMPEG_OPTIONS="$(echo $FFMPEG_OPTIONS | sed 's/--disable-hwaccels//')"
+            FFMPEG_OPTIONS="$(echo $FFMPEG_OPTIONS | sed 's/--disable-devices//')"
+            FFMPEG_OPTIONS="$FFMPEG_OPTIONS --enable-encoder=h264_nvenc --enable-encoder=hevc_nvenc"
+        else
+            echo "Warning: CUDA is not supported on this architecture. Skipping CUDA/NVIDIA codec flags."
+        fi
+    fi
+
     if [[ -f ${SRS_OBJS}/${SRS_PLATFORM}/3rdparty/ffmpeg/lib/libavcodec.a ]]; then
         rm -rf ${SRS_OBJS}/ffmpeg && cp -rf ${SRS_OBJS}/${SRS_PLATFORM}/3rdparty/ffmpeg ${SRS_OBJS}/ &&
-        echo "The ffmpeg-4-fit is ok."
+        echo "The ffmpeg is ok."
     else
-        echo "Building ffmpeg-4-fit." &&
-        rm -rf ${SRS_OBJS}/${SRS_PLATFORM}/ffmpeg-4-fit ${SRS_OBJS}/${SRS_PLATFORM}/3rdparty/ffmpeg \
-            ${SRS_OBJS}/ffmpeg &&
-        cp -rf ${SRS_WORKDIR}/3rdparty/ffmpeg-4-fit ${SRS_OBJS}/${SRS_PLATFORM}/ &&
-        (
-            cd ${SRS_OBJS}/${SRS_PLATFORM}/ffmpeg-4-fit &&
-            $FFMPEG_CONFIGURE --prefix=${SRS_DEPENDS_LIBS}/${SRS_PLATFORM}/3rdparty/ffmpeg \
-                --pkg-config=pkg-config --pkg-config-flags='--static' --extra-libs='-lpthread' --extra-libs='-lm' \
-                ${FFMPEG_OPTIONS}
-        ) &&
-        # See https://www.laoyuyu.me/2019/05/23/android/clang_compile_ffmpeg/
-        if [[ $SRS_CROSS_BUILD == YES ]]; then
-          sed -i -e 's/#define getenv(x) NULL/\/\*#define getenv(x) NULL\*\//g' ${SRS_OBJS}/${SRS_PLATFORM}/ffmpeg-4-fit/config.h &&
-          sed -i -e 's/#define HAVE_GMTIME_R 0/#define HAVE_GMTIME_R 1/g'       ${SRS_OBJS}/${SRS_PLATFORM}/ffmpeg-4-fit/config.h &&
-          sed -i -e 's/#define HAVE_LOCALTIME_R 0/#define HAVE_LOCALTIME_R 1/g' ${SRS_OBJS}/${SRS_PLATFORM}/ffmpeg-4-fit/config.h &&
-          # For MIPS, which fail with:
-          #     ./libavutil/libm.h:54:32: error: static declaration of 'cbrt' follows non-static declaration
-          #     /root/openwrt/staging_dir/toolchain-mipsel_24kc_gcc-8.4.0_musl/include/math.h:163:13: note: previous declaration of 'cbrt' was here
-          if [[ $SRS_CROSS_BUILD_ARCH == "mipsel" || $SRS_CROSS_BUILD_ARCH == "arm" || $SRS_CROSS_BUILD_ARCH == "aarch64" ]]; then
-            sed -i -e 's/#define HAVE_CBRT 0/#define HAVE_CBRT 1/g'         ${SRS_OBJS}/${SRS_PLATFORM}/ffmpeg-4-fit/config.h &&
-            sed -i -e 's/#define HAVE_CBRTF 0/#define HAVE_CBRTF 1/g'       ${SRS_OBJS}/${SRS_PLATFORM}/ffmpeg-4-fit/config.h &&
-            sed -i -e 's/#define HAVE_COPYSIGN 0/#define HAVE_COPYSIGN 1/g' ${SRS_OBJS}/${SRS_PLATFORM}/ffmpeg-4-fit/config.h &&
-            sed -i -e 's/#define HAVE_ERF 0/#define HAVE_ERF 1/g'           ${SRS_OBJS}/${SRS_PLATFORM}/ffmpeg-4-fit/config.h &&
-            sed -i -e 's/#define HAVE_HYPOT 0/#define HAVE_HYPOT 1/g'       ${SRS_OBJS}/${SRS_PLATFORM}/ffmpeg-4-fit/config.h &&
-            sed -i -e 's/#define HAVE_RINT 0/#define HAVE_RINT 1/g'         ${SRS_OBJS}/${SRS_PLATFORM}/ffmpeg-4-fit/config.h &&
-            sed -i -e 's/#define HAVE_LRINT 0/#define HAVE_LRINT 1/g'       ${SRS_OBJS}/${SRS_PLATFORM}/ffmpeg-4-fit/config.h &&
-            sed -i -e 's/#define HAVE_LRINTF 0/#define HAVE_LRINTF 1/g'     ${SRS_OBJS}/${SRS_PLATFORM}/ffmpeg-4-fit/config.h &&
-            sed -i -e 's/#define HAVE_ROUND 0/#define HAVE_ROUND 1/g'       ${SRS_OBJS}/${SRS_PLATFORM}/ffmpeg-4-fit/config.h &&
-            sed -i -e 's/#define HAVE_ROUNDF 0/#define HAVE_ROUNDF 1/g'     ${SRS_OBJS}/${SRS_PLATFORM}/ffmpeg-4-fit/config.h &&
-            sed -i -e 's/#define HAVE_TRUNC 0/#define HAVE_TRUNC 1/g'       ${SRS_OBJS}/${SRS_PLATFORM}/ffmpeg-4-fit/config.h &&
-            sed -i -e 's/#define HAVE_TRUNCF 0/#define HAVE_TRUNCF 1/g'     ${SRS_OBJS}/${SRS_PLATFORM}/ffmpeg-4-fit/config.h &&
-            echo "FFmpeg sed ok"
-          fi
-        fi &&
-        make -C ${SRS_OBJS}/${SRS_PLATFORM}/ffmpeg-4-fit ${SRS_JOBS} &&
-        make -C ${SRS_OBJS}/${SRS_PLATFORM}/ffmpeg-4-fit install &&
-        cp -rf ${SRS_OBJS}/${SRS_PLATFORM}/3rdparty/ffmpeg ${SRS_OBJS}/ &&
-        echo "The ffmpeg-4-fit is ok."
+        if [[ $SRS_CUDA == YES ]]; then
+            echo "Building upstream ffmpeg-6.0 for CUDA/NVENC." &&
+            rm -rf ${SRS_OBJS}/${SRS_PLATFORM}/ffmpeg-6.0 ${SRS_OBJS}/${SRS_PLATFORM}/3rdparty/ffmpeg \
+                ${SRS_OBJS}/ffmpeg &&
+            # Install NVIDIA codec headers if CUDA is enabled and architecture supports it
+            CAN_ENABLE_CUDA=; \
+            (gcc -dM -E - </dev/null |grep -q '#define __x86_64 1') && CAN_ENABLE_CUDA=YES; \
+            (gcc -dM -E - </dev/null |grep -q '#define __aarch64__ 1') && CAN_ENABLE_CUDA=YES; \
+            if [[ $CAN_ENABLE_CUDA == YES ]]; then \
+              if [[ ! -d /usr/local/include/ffnvcodec ]]; then \
+                echo "Installing nv-codec-headers for NVIDIA codecs" && \
+                rm -rf ${SRS_OBJS}/${SRS_PLATFORM}/nv-codec-headers && \
+                git clone --branch n11.1.5.2 --depth=1 https://github.com/FFmpeg/nv-codec-headers.git ${SRS_OBJS}/${SRS_PLATFORM}/nv-codec-headers && \
+                make -C ${SRS_OBJS}/${SRS_PLATFORM}/nv-codec-headers && \
+                make -C ${SRS_OBJS}/${SRS_PLATFORM}/nv-codec-headers install; \
+              else \
+                echo "nv-codec-headers already installed, skip"; \
+              fi; \
+            else \
+              echo "Skip nv-codec-headers install on unsupported architecture"; \
+            fi &&
+            (
+              cd ${SRS_OBJS}/${SRS_PLATFORM} && \
+              wget -q https://ffmpeg.org/releases/ffmpeg-6.0.tar.xz && \
+              tar xf ffmpeg-6.0.tar.xz && \
+              cd ffmpeg-6.0 && \
+              # Upstream FFmpeg: keep broad defaults, just disable docs; enable NVENC and audio codecs (OPUS/AAC)
+              FFMPEG_OPTIONS_UP="--disable-doc --enable-nonfree --enable-nvenc --enable-ffnvcodec --enable-encoder=h264_nvenc --enable-encoder=hevc_nvenc" && \
+              # Add external OPUS and explicit AAC to support RTC audio in the single upstream build
+              FFMPEG_OPTIONS_UP="$FFMPEG_OPTIONS_UP --enable-libopus --enable-decoder=libopus --enable-encoder=libopus" && \
+              FFMPEG_OPTIONS_UP="$FFMPEG_OPTIONS_UP --enable-decoder=aac --enable-decoder=aac_fixed --enable-decoder=aac_latm --enable-encoder=aac" && \
+              env PKG_CONFIG_PATH="${_PKGCFG_PATH}" CFLAGS="${_FF_CFLAGS}" LDFLAGS="${_FF_LDFLAGS}" \
+              ./configure --prefix=${SRS_DEPENDS_LIBS}/${SRS_PLATFORM}/3rdparty/ffmpeg \
+                  --pkg-config=pkg-config --pkg-config-flags='--static' --extra-libs='-lpthread' --extra-libs='-lm' \
+                  ${FFMPEG_OPTIONS_UP}
+            ) && \
+            make -C ${SRS_OBJS}/${SRS_PLATFORM}/ffmpeg-6.0 ${SRS_JOBS} && \
+            make -C ${SRS_OBJS}/${SRS_PLATFORM}/ffmpeg-6.0 install && \
+            cp -rf ${SRS_OBJS}/${SRS_PLATFORM}/3rdparty/ffmpeg ${SRS_OBJS}/ && \
+            mkdir -p ${SRS_OBJS}/ffmpeg/bin && \
+            cp -f ${SRS_OBJS}/${SRS_PLATFORM}/3rdparty/ffmpeg/bin/ffmpeg ${SRS_OBJS}/ffmpeg/bin/ffmpeg || true && \
+            cp -f ${SRS_OBJS}/${SRS_PLATFORM}/3rdparty/ffmpeg/bin/ffmpeg /usr/local/bin/ffmpeg || true && \
+            echo "The upstream ffmpeg-6.0 is ok."
+        else
+            echo "Building ffmpeg-4-fit." &&
+            rm -rf ${SRS_OBJS}/${SRS_PLATFORM}/ffmpeg-4-fit ${SRS_OBJS}/${SRS_PLATFORM}/3rdparty/ffmpeg \
+                ${SRS_OBJS}/ffmpeg &&
+            cp -rf ${SRS_WORKDIR}/3rdparty/ffmpeg-4-fit ${SRS_OBJS}/${SRS_PLATFORM}/ &&
+            (
+                cd ${SRS_OBJS}/${SRS_PLATFORM}/ffmpeg-4-fit &&
+                env SRS_FFMPEG_FIT=on PKG_CONFIG_PATH="${_PKGCFG_PATH}" CFLAGS="${_FF_CFLAGS}" LDFLAGS="${_FF_LDFLAGS}" \
+                ./configure --prefix=${SRS_DEPENDS_LIBS}/${SRS_PLATFORM}/3rdparty/ffmpeg \
+                    --pkg-config=pkg-config --pkg-config-flags='--static' --extra-libs='-lpthread' --extra-libs='-lm' \
+                    ${FFMPEG_OPTIONS}
+            ) &&
+            make -C ${SRS_OBJS}/${SRS_PLATFORM}/ffmpeg-4-fit ${SRS_JOBS} &&
+            make -C ${SRS_OBJS}/${SRS_PLATFORM}/ffmpeg-4-fit install &&
+            cp -rf ${SRS_OBJS}/${SRS_PLATFORM}/3rdparty/ffmpeg ${SRS_OBJS}/ &&
+            echo "The ffmpeg-4-fit is ok."
+        fi
     fi
     # check status
     ret=$?; if [[ $ret -ne 0 ]]; then echo "Build ffmpeg-4-fit failed, ret=$ret"; exit $ret; fi

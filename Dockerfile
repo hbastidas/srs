@@ -1,5 +1,6 @@
 ARG ARCH
 ARG IMAGE=ossrs/srs:ubuntu20
+ARG DIST_IMAGE=ubuntu:focal
 FROM ${ARCH}${IMAGE} AS build
 
 ARG CONFARGS
@@ -19,7 +20,7 @@ SHELL ["/bin/bash", "-c"]
 
 # Install depends tools.
 RUN if [[ $INSTALLDEPENDS != 'NO' ]]; then \
-        apt-get update && apt-get install -y gcc make g++ patch unzip perl git libasan5; \
+        apt-get update && apt-get install -y gcc make g++ patch unzip perl git libasan5 automake pkg-config cmake tclsh nasm yasm wget ca-certificates; \
     fi
 
 # Copy source code to docker.
@@ -34,7 +35,7 @@ RUN ./configure ${CONFARGS} && make ${MAKEARGS} && make install
 ############################################################
 # dist
 ############################################################
-FROM ${ARCH}ubuntu:focal AS dist
+FROM ${DIST_IMAGE} AS dist
 
 ARG BUILDPLATFORM
 ARG TARGETPLATFORM
@@ -43,10 +44,35 @@ RUN echo "BUILDPLATFORM: $BUILDPLATFORM, TARGETPLATFORM: $TARGETPLATFORM"
 # Expose ports for streaming @see https://github.com/ossrs/srs#ports
 EXPOSE 1935 1985 8080 5060 9000 8000/udp 10080/udp
 
-# FFMPEG 4.1
-COPY --from=build /usr/local/bin/ffmpeg /usr/local/srs/objs/ffmpeg/bin/ffmpeg
+# FFMPEG binary produced during build is placed under /srs/trunk/objs/ffmpeg/bin/ffmpeg
+COPY --from=build /srs/trunk/objs/ffmpeg/bin/ffmpeg /usr/local/srs/objs/ffmpeg/bin/ffmpeg
 # SRS binary, config files and srs-console.
 COPY --from=build /usr/local/srs /usr/local/srs
+
+# Ensure container has NVIDIA capabilities by default.
+ENV NVIDIA_VISIBLE_DEVICES=all
+ENV NVIDIA_DRIVER_CAPABILITIES=video,compute,utility
+
+# Provide a wrapper to force CUDA hwaccel and NVENC by default.
+RUN set -eux; \
+    cat > /usr/local/bin/ffmpeg-nvenc <<'EOF' && \
+    chmod +x /usr/local/bin/ffmpeg-nvenc
+#!/usr/bin/env bash
+set -e
+FFBIN="/usr/local/srs/objs/ffmpeg/bin/ffmpeg"
+args=("-hwaccel" "cuda" "-hwaccel_output_format" "cuda")
+has_codec=0
+for a in "$@"; do
+  case "$a" in
+    -c:v|-c:v=*) has_codec=1; break;;
+    *nvenc*) has_codec=1; break;;
+  esac
+done
+if [[ $has_codec -eq 0 ]]; then
+  args+=("-c:v" "h264_nvenc")
+fi
+exec "$FFBIN" "${args[@]}" "$@"
+EOF
 
 # Test the version of binaries.
 RUN ldd /usr/local/srs/objs/ffmpeg/bin/ffmpeg && \

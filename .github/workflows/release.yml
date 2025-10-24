@@ -175,6 +175,9 @@ jobs:
     name: docker-srs
     needs:
       - envs
+    strategy:
+      matrix:
+        variant: [cpu, gpu]
     steps:
       ##################################################################################################################
       - name: Covert output to env
@@ -194,13 +197,18 @@ jobs:
       # https://github.com/docker/setup-buildx-action
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@8c0edbc76e98fa90f69d9a2c020dcb50019dc325 # v2.2.1
-      - name: Check for CUDA flag
-        id: check_cuda
+      - name: Set build matrix vars
         run: |
-          if [[ -f trunk/objs/.srs_cuda_enabled ]]; then
+          if [[ "${{ matrix.variant }}" == "gpu" ]]; then
             echo "DOCKER_IMAGE=nvidia/cuda:11.4.0-base-ubuntu20.04" >> $GITHUB_ENV
+            echo "CONFARGS_EXTRA= --with-cuda=on" >> $GITHUB_ENV
+            echo "PLATFORMS=linux/arm64/v8,linux/amd64" >> $GITHUB_ENV
+            echo "TAG_SUFFIX=-gpu" >> $GITHUB_ENV
           else
             echo "DOCKER_IMAGE=ossrs/srs:ubuntu20" >> $GITHUB_ENV
+            echo "CONFARGS_EXTRA=" >> $GITHUB_ENV
+            echo "PLATFORMS=linux/arm/v7,linux/arm64/v8,linux/amd64" >> $GITHUB_ENV
+            echo "TAG_SUFFIX=" >> $GITHUB_ENV
           fi
       ##################################################################################################################
       # Create main images for Docker
@@ -213,17 +221,22 @@ jobs:
         env:
           PACKAGER: ${{ secrets.SRS_PACKAGER_DOCKER }}
         run: |
-          echo "Release ossrs/srs:$SRS_TAG"
-          docker buildx build --platform linux/arm/v7,linux/arm64/v8,linux/amd64 \
+          echo "Release ossrs/srs:$SRS_TAG${TAG_SUFFIX} (variant=${{ matrix.variant }})"
+          docker buildx build --platform ${PLATFORMS} \
             --output "type=image,push=true" \
-            -t ossrs/srs:$SRS_TAG \
+            -t ossrs/srs:$SRS_TAG${TAG_SUFFIX} \
             --build-arg SRS_AUTO_PACKAGER=$PACKAGER \
             --build-arg IMAGE=${{ env.DOCKER_IMAGE }} \
-            --build-arg CONFARGS='--sanitizer=off --gb28181=on --rtsp=on' \
+            --build-arg CONFARGS="--sanitizer=off --gb28181=on --rtsp=on${CONFARGS_EXTRA}" \
             -f Dockerfile .
+      - name: Verify NVENC encoders present (GPU)
+        if: ${{ matrix.variant == 'gpu' }}
+        run: |
+          docker run --rm ossrs/srs:$SRS_TAG-gpu /usr/local/srs/objs/ffmpeg/bin/ffmpeg -hide_banner -encoders | grep -E 'h264_nvenc|hevc_nvenc'
       # Docker alias images
       # TODO: FIXME: If stable, please set the latest from 5.0 to 6.0
-      - name: Docker alias images for ossrs/srs
+      - name: Docker alias images for ossrs/srs (CPU)
+        if: ${{ matrix.variant == 'cpu' }}
         uses: akhilerm/tag-push-action@85bf542f43f5f2060ef76262a67ee3607cb6db37 # v2.1.0
         with:
           src: ossrs/srs:${{ env.SRS_TAG }}
@@ -233,6 +246,17 @@ jobs:
             ossrs/srs:v${{ env.SRS_MAJOR }}
             ossrs/srs:${{ env.SRS_XYZ }}
             ossrs/srs:v${{ env.SRS_XYZ }}
+      - name: Docker alias images for ossrs/srs (GPU)
+        if: ${{ matrix.variant == 'gpu' }}
+        uses: akhilerm/tag-push-action@85bf542f43f5f2060ef76262a67ee3607cb6db37 # v2.1.0
+        with:
+          src: ossrs/srs:${{ env.SRS_TAG }}-gpu
+          dst: |
+            ossrs/srs:${{ env.SRS_VERSION }}-gpu
+            ossrs/srs:${{ env.SRS_MAJOR }}-gpu
+            ossrs/srs:v${{ env.SRS_MAJOR }}-gpu
+            ossrs/srs:${{ env.SRS_XYZ }}-gpu
+            ossrs/srs:v${{ env.SRS_XYZ }}-gpu
     runs-on: ubuntu-22.04
 
   aliyun-srs:
@@ -268,6 +292,17 @@ jobs:
             registry.cn-hangzhou.aliyuncs.com/ossrs/srs:v${{ env.SRS_MAJOR }}
             registry.cn-hangzhou.aliyuncs.com/ossrs/srs:${{ env.SRS_XYZ }}
             registry.cn-hangzhou.aliyuncs.com/ossrs/srs:v${{ env.SRS_XYZ }}
+      - name: Push GPU tags to Aliyun registry for ossrs/srs
+        uses: akhilerm/tag-push-action@85bf542f43f5f2060ef76262a67ee3607cb6db37 # v2.1.0
+        with:
+          src: ossrs/srs:${{ env.SRS_TAG }}-gpu
+          dst: |
+            registry.cn-hangzhou.aliyuncs.com/ossrs/srs:${{ env.SRS_TAG }}-gpu
+            registry.cn-hangzhou.aliyuncs.com/ossrs/srs:${{ env.SRS_VERSION }}-gpu
+            registry.cn-hangzhou.aliyuncs.com/ossrs/srs:${{ env.SRS_MAJOR }}-gpu
+            registry.cn-hangzhou.aliyuncs.com/ossrs/srs:v${{ env.SRS_MAJOR }}-gpu
+            registry.cn-hangzhou.aliyuncs.com/ossrs/srs:${{ env.SRS_XYZ }}-gpu
+            registry.cn-hangzhou.aliyuncs.com/ossrs/srs:v${{ env.SRS_XYZ }}-gpu
     runs-on: ubuntu-22.04
 
   update:

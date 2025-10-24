@@ -619,15 +619,11 @@ if [[ $SRS_FFMPEG_FIT == YES && $SRS_USE_SYS_FFMPEG == NO ]]; then
         (gcc -dM -E - </dev/null |grep -q '#define __x86_64 1') && CAN_ENABLE_CUDA=YES
         (gcc -dM -E - </dev/null |grep -q '#define __aarch64__ 1') && CAN_ENABLE_CUDA=YES
         if [[ $CAN_ENABLE_CUDA == YES ]]; then
-            # NVENC-only path for stability with ffmpeg-4-fit.
-            FFMPEG_OPTIONS="$FFMPEG_OPTIONS --enable-nvenc --enable-nonfree --enable-ffnvcodec --disable-cuda"
-            # Keep cuvid disabled; only remove the disables for nvenc/ffnvcodec and leave cuvid/nvdec/hwaccels as-is.
-            FFMPEG_OPTIONS="$(echo $FFMPEG_OPTIONS | sed 's/--disable-nvenc//')"
-            FFMPEG_OPTIONS="$(echo $FFMPEG_OPTIONS | sed 's/--disable-ffnvcodec//')"
-            # Allow hardware accels/devices if not explicitly disabled elsewhere.
-            FFMPEG_OPTIONS="$(echo $FFMPEG_OPTIONS | sed 's/--disable-hwaccels//')"
-            FFMPEG_OPTIONS="$(echo $FFMPEG_OPTIONS | sed 's/--disable-devices//')"
+            # Enable NVENC/ffnvcodec; keep cuvid/nvdec disabled unless explicitly enabled elsewhere.
+            FFMPEG_OPTIONS="$FFMPEG_OPTIONS --enable-ffnvcodec --enable-nvenc"
             FFMPEG_OPTIONS="$FFMPEG_OPTIONS --enable-encoder=h264_nvenc --enable-encoder=hevc_nvenc"
+            # Allow hardware accelerators and devices for hwaccel paths when using CUDA.
+            FFMPEG_OPTIONS="$FFMPEG_OPTIONS --enable-hwaccels --enable-devices"
         else
             echo "Warning: CUDA is not supported on this architecture. Skipping CUDA/NVIDIA codec flags."
         fi

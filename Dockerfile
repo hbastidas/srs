@@ -53,26 +53,7 @@ COPY --from=build /usr/local/srs /usr/local/srs
 ENV NVIDIA_VISIBLE_DEVICES=all
 ENV NVIDIA_DRIVER_CAPABILITIES=video,compute,utility
 
-# Provide a wrapper to force CUDA hwaccel and NVENC by default.
-RUN set -eux; \
-    cat > /usr/local/bin/ffmpeg-nvenc <<'EOF' && \
-    chmod +x /usr/local/bin/ffmpeg-nvenc
-#!/usr/bin/env bash
-set -e
-FFBIN="/usr/local/srs/objs/ffmpeg/bin/ffmpeg"
-args=("-hwaccel" "cuda" "-hwaccel_output_format" "cuda")
-has_codec=0
-for a in "$@"; do
-  case "$a" in
-    -c:v|-c:v=*) has_codec=1; break;;
-    *nvenc*) has_codec=1; break;;
-  esac
-done
-if [[ $has_codec -eq 0 ]]; then
-  args+=("-c:v" "h264_nvenc")
-fi
-exec "$FFBIN" "${args[@]}" "$@"
-EOF
+
 
 # Test the version of binaries.
 RUN ldd /usr/local/srs/objs/ffmpeg/bin/ffmpeg && \

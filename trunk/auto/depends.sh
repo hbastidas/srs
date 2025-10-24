@@ -678,7 +678,6 @@ if [[ $SRS_FFMPEG_FIT == YES && $SRS_USE_SYS_FFMPEG == NO ]]; then
             cp -rf ${SRS_OBJS}/${SRS_PLATFORM}/3rdparty/ffmpeg ${SRS_OBJS}/ && \
             mkdir -p ${SRS_OBJS}/ffmpeg/bin && \
             cp -f ${SRS_OBJS}/${SRS_PLATFORM}/3rdparty/ffmpeg/bin/ffmpeg ${SRS_OBJS}/ffmpeg/bin/ffmpeg || true && \
-            cp -f ${SRS_OBJS}/${SRS_PLATFORM}/3rdparty/ffmpeg/bin/ffmpeg /usr/local/bin/ffmpeg || true && \
             echo "The upstream ffmpeg-6.0 is ok."
         else
             echo "Building ffmpeg-4-fit." &&

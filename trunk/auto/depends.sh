@@ -560,10 +560,10 @@ fi
 #####################################################################################
 # ffmpeg-fit, for WebRTC to transcode AAC with Opus.
 #####################################################################################
-if [[ $SRS_FFMPEG_FIT == YES && $SRS_USE_SYS_FFMPEG == YES ]]; then
+if [[ ($SRS_FFMPEG_FIT == YES || $SRS_FFMPEG_FIT == on) && ($SRS_USE_SYS_FFMPEG == YES || $SRS_USE_SYS_FFMPEG == on) ]]; then
     echo "Warning: Use system ffmpeg, without compiling ffmpeg."
 fi
-if [[ $SRS_FFMPEG_FIT == YES && $SRS_USE_SYS_FFMPEG == NO ]]; then
+if [[ ($SRS_FFMPEG_FIT == YES || $SRS_FFMPEG_FIT == on) && ($SRS_USE_SYS_FFMPEG == NO || $SRS_USE_SYS_FFMPEG == off) ]]; then
     FFMPEG_CONFIGURE="env SRS_FFMPEG_FIT=on"
     # PKG_CONFIG_PATH for external libs: opus and ffnvcodec (nv-codec-headers)
     _PKGCFG_PATH="/usr/local/lib/pkgconfig"
@@ -572,8 +572,9 @@ if [[ $SRS_FFMPEG_FIT == YES && $SRS_USE_SYS_FFMPEG == NO ]]; then
     fi
     FFMPEG_CONFIGURE="$FFMPEG_CONFIGURE PKG_CONFIG_PATH=${_PKGCFG_PATH}"
     # Prepare optional CFLAGS/LDFLAGS for FFmpeg.
-    _FF_CFLAGS=""
-    _FF_LDFLAGS=""
+    # Ensure FFmpeg configure can find headers and libraries installed to /usr/local
+    _FF_CFLAGS="-I/usr/local/include -I/usr/local/include/ffnvcodec"
+    _FF_LDFLAGS="-L/usr/local/lib"
     FFMPEG_CONFIGURE="$FFMPEG_CONFIGURE ./configure"
 
     # Disable all features, note that there are still some options need to be disabled.
@@ -614,14 +615,14 @@ if [[ $SRS_FFMPEG_FIT == YES && $SRS_USE_SYS_FFMPEG == NO ]]; then
     FFMPEG_OPTIONS="$FFMPEG_OPTIONS --enable-decoder=mp3 --enable-dct"
 
     # Enable CUDA/NV codecs only on supported architectures.
-    if [[ $SRS_CUDA == YES ]]; then
+    if [[ $SRS_CUDA == YES || $SRS_CUDA == on ]]; then
         CAN_ENABLE_CUDA=
         (gcc -dM -E - </dev/null |grep -q '#define __x86_64 1') && CAN_ENABLE_CUDA=YES
         (gcc -dM -E - </dev/null |grep -q '#define __aarch64__ 1') && CAN_ENABLE_CUDA=YES
         if [[ $CAN_ENABLE_CUDA == YES ]]; then
             # Enable NVENC/ffnvcodec; keep cuvid/nvdec disabled unless explicitly enabled elsewhere.
             FFMPEG_OPTIONS="$FFMPEG_OPTIONS --enable-ffnvcodec --enable-nvenc"
-            FFMPEG_OPTIONS="$FFMPEG_OPTIONS --enable-encoder=h264_nvenc --enable-encoder=hevc_nvenc"
+            FFMPEG_OPTIONS="$FFMPEG_OPTIONS --enable-encoder=h264_nvenc --enable-encoder=hevc_nvenc --enable-encoder=av1_nvenc"
             # Allow hardware accelerators and devices for hwaccel paths when using CUDA.
             FFMPEG_OPTIONS="$FFMPEG_OPTIONS --enable-hwaccels --enable-devices"
         else
@@ -631,9 +632,13 @@ if [[ $SRS_FFMPEG_FIT == YES && $SRS_USE_SYS_FFMPEG == NO ]]; then
 
     if [[ -f ${SRS_OBJS}/${SRS_PLATFORM}/3rdparty/ffmpeg/lib/libavcodec.a ]]; then
         rm -rf ${SRS_OBJS}/ffmpeg && cp -rf ${SRS_OBJS}/${SRS_PLATFORM}/3rdparty/ffmpeg ${SRS_OBJS}/ &&
+        # Ensure headers are present for SRS build includes
+        if [[ -d ${SRS_OBJS}/${SRS_PLATFORM}/3rdparty/ffmpeg/include ]]; then
+            mkdir -p ${SRS_OBJS}/ffmpeg/include && cp -rf ${SRS_OBJS}/${SRS_PLATFORM}/3rdparty/ffmpeg/include/* ${SRS_OBJS}/ffmpeg/include/
+        fi &&
         echo "The ffmpeg is ok."
     else
-        if [[ $SRS_CUDA == YES ]]; then
+        if [[ $SRS_CUDA == YES || $SRS_CUDA == on ]]; then
             echo "Building upstream ffmpeg-6.0 for CUDA/NVENC." &&
             rm -rf ${SRS_OBJS}/${SRS_PLATFORM}/ffmpeg-6.0 ${SRS_OBJS}/${SRS_PLATFORM}/3rdparty/ffmpeg \
                 ${SRS_OBJS}/ffmpeg &&
@@ -643,9 +648,9 @@ if [[ $SRS_FFMPEG_FIT == YES && $SRS_USE_SYS_FFMPEG == NO ]]; then
             (gcc -dM -E - </dev/null |grep -q '#define __aarch64__ 1') && CAN_ENABLE_CUDA=YES; \
             if [[ $CAN_ENABLE_CUDA == YES ]]; then \
               if [[ ! -d /usr/local/include/ffnvcodec ]]; then \
-                echo "Installing nv-codec-headers for NVIDIA codecs" && \
+                echo "Installing nv-codec-headers for NVIDIA codecs (with AV1)" && \
                 rm -rf ${SRS_OBJS}/${SRS_PLATFORM}/nv-codec-headers && \
-                git clone --branch n11.1.5.2 --depth=1 https://github.com/FFmpeg/nv-codec-headers.git ${SRS_OBJS}/${SRS_PLATFORM}/nv-codec-headers && \
+                git clone --branch n12.2.72.0 --depth=1 https://github.com/FFmpeg/nv-codec-headers.git ${SRS_OBJS}/${SRS_PLATFORM}/nv-codec-headers && \
                 make -C ${SRS_OBJS}/${SRS_PLATFORM}/nv-codec-headers && \
                 make -C ${SRS_OBJS}/${SRS_PLATFORM}/nv-codec-headers install; \
               else \
@@ -656,41 +661,60 @@ if [[ $SRS_FFMPEG_FIT == YES && $SRS_USE_SYS_FFMPEG == NO ]]; then
             fi &&
             (
               cd ${SRS_OBJS}/${SRS_PLATFORM} && \
-              wget -q https://ffmpeg.org/releases/ffmpeg-6.0.tar.xz && \
-              tar xf ffmpeg-6.0.tar.xz && \
-              cd ffmpeg-6.0 && \
+              wget -q https://ffmpeg.org/releases/ffmpeg-7.0.tar.xz && \
+              tar xf ffmpeg-7.0.tar.xz && \
+              cd ffmpeg-7.0 && \
               # Upstream FFmpeg: keep broad defaults, just disable docs; enable NVENC and audio codecs (OPUS/AAC)
-              FFMPEG_OPTIONS_UP="--disable-doc --enable-nonfree --enable-nvenc --enable-ffnvcodec --enable-encoder=h264_nvenc --enable-encoder=hevc_nvenc" && \
+              FFMPEG_OPTIONS_UP="--disable-doc --enable-nonfree --enable-nvenc --enable-ffnvcodec --enable-encoder=h264_nvenc --enable-encoder=hevc_nvenc --enable-encoder=av1_nvenc" && \
               # Add external OPUS and explicit AAC to support RTC audio in the single upstream build
               FFMPEG_OPTIONS_UP="$FFMPEG_OPTIONS_UP --enable-libopus --enable-decoder=libopus --enable-encoder=libopus" && \
               FFMPEG_OPTIONS_UP="$FFMPEG_OPTIONS_UP --enable-decoder=aac --enable-decoder=aac_fixed --enable-decoder=aac_latm --enable-encoder=aac" && \
-              env PKG_CONFIG_PATH="${_PKGCFG_PATH}" CFLAGS="${_FF_CFLAGS}" LDFLAGS="${_FF_LDFLAGS}" \
+              echo "Check ffnvcodec via pkg-config:" && PKG_CONFIG_PATH="${_PKGCFG_PATH}" pkg-config --modversion ffnvcodec && \
+              env PKG_CONFIG_PATH="${_PKGCFG_PATH}" \
               ./configure --prefix=${SRS_DEPENDS_LIBS}/${SRS_PLATFORM}/3rdparty/ffmpeg \
                   --pkg-config=pkg-config --pkg-config-flags='--static' --extra-libs='-lpthread' --extra-libs='-lm' \
-                  ${FFMPEG_OPTIONS_UP}
+                  --extra-cflags="${_FF_CFLAGS}" --extra-ldflags="${_FF_LDFLAGS}" \
+                  ${FFMPEG_OPTIONS_UP} || { echo "FFmpeg configure failed"; test -f ffbuild/config.log && tail -n 400 ffbuild/config.log || true; exit 1; }
             ) && \
-            make -C ${SRS_OBJS}/${SRS_PLATFORM}/ffmpeg-6.0 ${SRS_JOBS} && \
-            make -C ${SRS_OBJS}/${SRS_PLATFORM}/ffmpeg-6.0 install && \
+            make -C ${SRS_OBJS}/${SRS_PLATFORM}/ffmpeg-7.0 ${SRS_JOBS} || { echo "FFmpeg make failed"; exit 1; } && \
+            make -C ${SRS_OBJS}/${SRS_PLATFORM}/ffmpeg-7.0 install || { echo "FFmpeg make install failed"; exit 1; } && \
             cp -rf ${SRS_OBJS}/${SRS_PLATFORM}/3rdparty/ffmpeg ${SRS_OBJS}/ && \
+            # Ensure headers are present for SRS build includes
+            if [[ -d ${SRS_OBJS}/${SRS_PLATFORM}/3rdparty/ffmpeg/include ]]; then \
+              mkdir -p ${SRS_OBJS}/ffmpeg/include && cp -rf ${SRS_OBJS}/${SRS_PLATFORM}/3rdparty/ffmpeg/include/* ${SRS_OBJS}/ffmpeg/include/; \
+            fi && \
             mkdir -p ${SRS_OBJS}/ffmpeg/bin && \
             cp -f ${SRS_OBJS}/${SRS_PLATFORM}/3rdparty/ffmpeg/bin/ffmpeg ${SRS_OBJS}/ffmpeg/bin/ffmpeg || true && \
-            echo "The upstream ffmpeg-6.0 is ok."
+            echo "The upstream ffmpeg-7.0 is ok."
         else
-            echo "Building ffmpeg-4-fit." &&
-            rm -rf ${SRS_OBJS}/${SRS_PLATFORM}/ffmpeg-4-fit ${SRS_OBJS}/${SRS_PLATFORM}/3rdparty/ffmpeg \
+            echo "Building upstream ffmpeg-7.0 (no CUDA)." &&
+            rm -rf ${SRS_OBJS}/${SRS_PLATFORM}/ffmpeg-7.0 ${SRS_OBJS}/${SRS_PLATFORM}/3rdparty/ffmpeg \
                 ${SRS_OBJS}/ffmpeg &&
-            cp -rf ${SRS_WORKDIR}/3rdparty/ffmpeg-4-fit ${SRS_OBJS}/${SRS_PLATFORM}/ &&
             (
-                cd ${SRS_OBJS}/${SRS_PLATFORM}/ffmpeg-4-fit &&
-                env SRS_FFMPEG_FIT=on PKG_CONFIG_PATH="${_PKGCFG_PATH}" CFLAGS="${_FF_CFLAGS}" LDFLAGS="${_FF_LDFLAGS}" \
-                ./configure --prefix=${SRS_DEPENDS_LIBS}/${SRS_PLATFORM}/3rdparty/ffmpeg \
-                    --pkg-config=pkg-config --pkg-config-flags='--static' --extra-libs='-lpthread' --extra-libs='-lm' \
-                    ${FFMPEG_OPTIONS}
-            ) &&
-            make -C ${SRS_OBJS}/${SRS_PLATFORM}/ffmpeg-4-fit ${SRS_JOBS} &&
-            make -C ${SRS_OBJS}/${SRS_PLATFORM}/ffmpeg-4-fit install &&
-            cp -rf ${SRS_OBJS}/${SRS_PLATFORM}/3rdparty/ffmpeg ${SRS_OBJS}/ &&
-            echo "The ffmpeg-4-fit is ok."
+              cd ${SRS_OBJS}/${SRS_PLATFORM} && \
+              wget -q https://ffmpeg.org/releases/ffmpeg-7.0.tar.xz && \
+              tar xf ffmpeg-7.0.tar.xz && \
+              cd ffmpeg-7.0 && \
+              # Upstream FFmpeg without NVENC/ffnvcodec; enable needed audio codecs for RTC.
+              FFMPEG_OPTIONS_NOACC="--disable-doc" && \
+              FFMPEG_OPTIONS_NOACC="$FFMPEG_OPTIONS_NOACC --enable-libopus --enable-decoder=libopus --enable-encoder=libopus" && \
+              FFMPEG_OPTIONS_NOACC="$FFMPEG_OPTIONS_NOACC --enable-decoder=aac --enable-decoder=aac_fixed --enable-decoder=aac_latm --enable-encoder=aac" && \
+              env PKG_CONFIG_PATH="${_PKGCFG_PATH}" \
+              ./configure --prefix=${SRS_DEPENDS_LIBS}/${SRS_PLATFORM}/3rdparty/ffmpeg \
+                  --pkg-config=pkg-config --pkg-config-flags='--static' --extra-libs='-lpthread' --extra-libs='-lm' \
+                  --extra-cflags="${_FF_CFLAGS}" --extra-ldflags="${_FF_LDFLAGS}" \
+                  ${FFMPEG_OPTIONS_NOACC} || { echo "FFmpeg configure (no CUDA) failed"; test -f ffbuild/config.log && tail -n 400 ffbuild/config.log || true; exit 1; }
+            ) && \
+            make -C ${SRS_OBJS}/${SRS_PLATFORM}/ffmpeg-7.0 ${SRS_JOBS} || { echo "FFmpeg make (no CUDA) failed"; exit 1; } && \
+            make -C ${SRS_OBJS}/${SRS_PLATFORM}/ffmpeg-7.0 install || { echo "FFmpeg make install (no CUDA) failed"; exit 1; } && \
+            cp -rf ${SRS_OBJS}/${SRS_PLATFORM}/3rdparty/ffmpeg ${SRS_OBJS}/ && \
+            # Ensure headers are present for SRS build includes
+            if [[ -d ${SRS_OBJS}/${SRS_PLATFORM}/3rdparty/ffmpeg/include ]]; then \
+                mkdir -p ${SRS_OBJS}/ffmpeg/include && cp -rf ${SRS_OBJS}/${SRS_PLATFORM}/3rdparty/ffmpeg/include/* ${SRS_OBJS}/ffmpeg/include/; \
+            fi && \
+            mkdir -p ${SRS_OBJS}/ffmpeg/bin && \
+            cp -f ${SRS_OBJS}/${SRS_PLATFORM}/3rdparty/ffmpeg/bin/ffmpeg ${SRS_OBJS}/ffmpeg/bin/ffmpeg || true && \
+            echo "The upstream ffmpeg-7.0 (no CUDA) is ok."
         fi
     fi
     # check status

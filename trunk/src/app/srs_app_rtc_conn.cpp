@@ -3375,11 +3375,38 @@ srs_error_t SrsRtcPublisherNegotiator::negotiate_publish_capability(SrsRtcUserCo
         } else if (remote_media_desc.is_video()) {
             std::vector<SrsMediaPayloadType> payloads = remote_media_desc.find_media_with_encoding_name("H264");
             if (payloads.empty()) {
-                return srs_error_new(ERROR_RTC_SDP_EXCHANGE, "no found valid H.264 payload type");
-            }
+                // Try AV1, and be compatible with AV1X encoding name if present.
+                std::vector<SrsMediaPayloadType> av1_payloads = remote_media_desc.find_media_with_encoding_name("AV1");
+                if (av1_payloads.empty()) {
+                    av1_payloads = remote_media_desc.find_media_with_encoding_name("AV1X");
+                }
+                if (av1_payloads.empty()) {
+                    return srs_error_new(ERROR_RTC_SDP_EXCHANGE, "no found valid H.264 or AV1 payload type");
+                }
 
-            std::deque<SrsMediaPayloadType> backup_payloads;
-            for (int j = 0; j < (int)payloads.size(); j++) {
+                const SrsMediaPayloadType &payload = av1_payloads.front();
+                SrsVideoPayload *video_payload = new SrsVideoPayload(payload.payload_type_, payload.encoding_name_, payload.clock_rate_);
+
+                // Copy supported RTCP feedback (nack/pli, transport-cc) similar to H.264/HEVC handling.
+                for (int k = 0; k < (int)payload.rtcp_fb_.size(); ++k) {
+                    const string &rtcp_fb = payload.rtcp_fb_.at(k);
+                    if (nack_enabled) {
+                        if (rtcp_fb == "nack" || rtcp_fb == "nack pli") {
+                            video_payload->rtcp_fbs_.push_back(rtcp_fb);
+                        }
+                    }
+                    if (twcc_enabled && remote_twcc_id) {
+                        if (rtcp_fb == "transport-cc") {
+                            video_payload->rtcp_fbs_.push_back(rtcp_fb);
+                        }
+                    }
+                }
+
+                track_desc->type_ = "video";
+                track_desc->set_codec_payload((SrsCodecPayload *)video_payload);
+            } else {
+                std::deque<SrsMediaPayloadType> backup_payloads;
+                for (int j = 0; j < (int)payloads.size(); j++) {
                 const SrsMediaPayloadType &payload = payloads.at(j);
 
                 if (payload.format_specific_param_.empty()) {
@@ -3431,10 +3458,10 @@ srs_error_t SrsRtcPublisherNegotiator::negotiate_publish_capability(SrsRtcUserCo
                 }
 
                 backup_payloads.push_back(payload);
-            }
+                }
 
-            // Try my best to pick at least one media payload type.
-            if (!track_desc->media_ && !backup_payloads.empty()) {
+                // Try my best to pick at least one media payload type.
+                if (!track_desc->media_ && !backup_payloads.empty()) {
                 const SrsMediaPayloadType &payload = backup_payloads.front();
 
                 // if the playload is opus, and the encoding_param_ is channel
@@ -3460,6 +3487,7 @@ srs_error_t SrsRtcPublisherNegotiator::negotiate_publish_capability(SrsRtcUserCo
                 track_desc->type_ = "video";
                 track_desc->set_codec_payload((SrsCodecPayload *)video_payload);
                 srs_warn("choose backup H.264 pt=%d %s", payload.payload_type_, payload.format_specific_param_.c_str());
+                }
             }
 
             // TODO: FIXME: Support RRTR?

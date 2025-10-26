@@ -39,8 +39,6 @@ jobs:
       - name: Build SRS
         run: |
           echo "pwd: $(pwd), who: $(whoami)"
-          docker run --rm -v $(pwd):$(pwd) -w $(pwd)/trunk ossrs/srs:ubuntu20-cache \
-              bash -c "./configure && chmod 777 -R objs"
           cd trunk && LIBS="-lz -llzma" ./configure && make LIBS="-lz -llzma"
 
       - name: Perform CodeQL Analysis

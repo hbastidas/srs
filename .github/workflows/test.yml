@@ -12,7 +12,6 @@ permissions: read-all
 # multiple-arch-aarch64(7m)
 # fast(0s) - To limit all fastly run jobs after slow jobs.
 #     build-rocky9(3m)
-#     build-ubuntu20(2m)
 #     build-ubuntu22(2m)
 #     build-ubuntu24(2m)
 #     build-cross-arm(3m)
@@ -40,17 +39,6 @@ jobs:
         run: DOCKER_BUILDKIT=1 docker build -f trunk/Dockerfile.builds --target rocky9-ansi-no-ffmpeg .
     runs-on: ubuntu-22.04
 
-  build-ubuntu20:
-    name: build-ubuntu20
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@ac593985615ec2ede58e132d2e21d2b1cbd6127c # v3.3.0
-      # Build for Ubuntu20
-      - name: Build on Ubuntu20, baseline
-        run: DOCKER_BUILDKIT=1 docker build -f trunk/Dockerfile.builds --target ubuntu20-baseline .
-      - name: Build on Ubuntu20, with all features
-        run: DOCKER_BUILDKIT=1 docker build -f trunk/Dockerfile.builds --target ubuntu20-all .
-    runs-on: ubuntu-22.04
 
   build-ubuntu22:
     name: build-ubuntu22
@@ -247,7 +235,6 @@ jobs:
       - coverage
       - test
       - build-rocky9
-      - build-ubuntu20
       - build-ubuntu22
       - build-ubuntu24
       - build-cross-arm

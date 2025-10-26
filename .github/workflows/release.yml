@@ -205,7 +205,7 @@ jobs:
             echo "PLATFORMS=linux/arm64/v8,linux/amd64" >> $GITHUB_ENV
             echo "TAG_SUFFIX=-gpu" >> $GITHUB_ENV
           else
-            echo "DOCKER_IMAGE=ossrs/srs:ubuntu20" >> $GITHUB_ENV
+            echo "DOCKER_IMAGE=ubuntu:24.04" >> $GITHUB_ENV
             echo "CONFARGS_EXTRA=" >> $GITHUB_ENV
             echo "PLATFORMS=linux/arm/v7,linux/arm64/v8,linux/amd64" >> $GITHUB_ENV
             echo "TAG_SUFFIX=" >> $GITHUB_ENV

@@ -1,15 +1,18 @@
-FROM ossrs/srs:ubuntu20-cache
+FROM ubuntu:24.04
 
 ARG MAKEARGS
 RUN echo "MAKEARGS: ${MAKEARGS}"
 
-# https://serverfault.com/questions/949991/how-to-install-tzdata-on-a-ubuntu-docker-image
-ENV DEBIAN_FRONTEND noninteractive
+ENV DEBIAN_FRONTEND=noninteractive
 
-# For go to build and run utest.
-ENV PATH $PATH:/usr/local/go/bin
-
-RUN apt update -y && apt install -y gcc make g++ patch unzip perl git libasan5
+# Build and test dependencies
+RUN apt-get update \
+ && apt-get install -y --no-install-recommends \
+    gcc g++ make patch unzip perl git ca-certificates \
+    automake autoconf libtool cmake pkg-config nasm yasm xz-utils tclsh \
+    zlib1g-dev liblzma-dev golang-go \
+    libasan8 \
+ && rm -rf /var/lib/apt/lists/*
 
 # Build and install SRS.
 COPY . /srs

@@ -2,7 +2,12 @@
 ############################################################
 # build
 ############################################################
-FROM ossrs/srs:ubuntu20 AS build
+FROM ubuntu:24.04 AS build
+
+ENV DEBIAN_FRONTEND=noninteractive
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential ca-certificates git make \
+ && rm -rf /var/lib/apt/lists/*
 
 COPY . /tmp/signaling
 RUN cd /tmp/signaling && make
@@ -12,7 +17,7 @@ RUN cp -R /tmp/signaling/www /usr/local/
 ############################################################
 # dist
 ############################################################
-FROM ubuntu:focal AS dist
+FROM ubuntu:24.04 AS dist
 
 # HTTP/1989
 EXPOSE 1989

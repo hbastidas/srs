@@ -6,9 +6,9 @@ RUN dnf makecache -y \
  && dnf config-manager --set-enabled crb \
  && dnf -y install epel-release \
  && dnf -y groupinstall "Development Tools" \
- && dnf install -y wget ca-certificates which automake autoconf cmake tcl nasm yasm perl unzip patch xz xz-devel zlib-devel pkgconf-pkg-config libasan \
+ && dnf install -y wget ca-certificates which automake autoconf cmake tcl nasm yasm perl unzip patch xz xz-devel zlib-devel pkgconf-pkg-config ffmpeg-devel libasan \
  && update-ca-trust && dnf clean all
-RUN cd /srs/trunk && ./configure --sanitizer=on --srt=off --gb28181=off && make
+RUN cd /srs/trunk && ./configure --sanitizer=on --srt=off --gb28181=off --sys-ffmpeg=on --ffmpeg-fit=off && make
 
 FROM rockylinux:9 AS rocky9-no-webrtc
 COPY . /srs
@@ -17,9 +17,9 @@ RUN dnf makecache -y \
  && dnf config-manager --set-enabled crb \
  && dnf -y install epel-release \
  && dnf -y groupinstall "Development Tools" \
- && dnf install -y wget ca-certificates which automake autoconf cmake tcl nasm yasm perl unzip patch xz zlib-devel libasan \
+ && dnf install -y wget ca-certificates which automake autoconf cmake tcl nasm yasm perl unzip patch xz zlib-devel ffmpeg-devel libasan \
  && update-ca-trust && dnf clean all
-RUN cd /srs/trunk && ./configure --sanitizer=on --srt=off --gb28181=off --rtc=off && make
+RUN cd /srs/trunk && ./configure --sanitizer=on --srt=off --gb28181=off --rtc=off --sys-ffmpeg=on --ffmpeg-fit=off && make
 
 FROM rockylinux:9 AS rocky9-no-asm
 COPY . /srs
@@ -28,9 +28,9 @@ RUN dnf makecache -y \
  && dnf config-manager --set-enabled crb \
  && dnf -y install epel-release \
  && dnf -y groupinstall "Development Tools" \
- && dnf install -y wget ca-certificates which automake autoconf cmake tcl nasm yasm perl unzip patch xz zlib-devel libasan \
+ && dnf install -y wget ca-certificates which automake autoconf cmake tcl nasm yasm perl unzip patch xz zlib-devel ffmpeg-devel libasan \
  && update-ca-trust && dnf clean all
-RUN cd /srs/trunk && ./configure --sanitizer=on --srt=off --gb28181=off --nasm=off --srtp-nasm=off && make
+RUN cd /srs/trunk && ./configure --sanitizer=on --srt=off --gb28181=off --nasm=off --srtp-nasm=off --sys-ffmpeg=on --ffmpeg-fit=off && make
 
 FROM rockylinux:9 AS rocky9-all
 COPY . /srs
@@ -39,9 +39,9 @@ RUN dnf makecache -y \
  && dnf config-manager --set-enabled crb \
  && dnf -y install epel-release \
  && dnf -y groupinstall "Development Tools" \
- && dnf install -y wget ca-certificates which automake autoconf cmake tcl nasm yasm perl unzip patch xz zlib-devel libasan \
+ && dnf install -y wget ca-certificates which automake autoconf cmake tcl nasm yasm perl unzip patch xz zlib-devel ffmpeg-devel libasan \
  && update-ca-trust && dnf clean all
-RUN cd /srs/trunk && ./configure --sanitizer=on --srt=on --gb28181=on --apm=on --h265=on && make
+RUN cd /srs/trunk && ./configure --sanitizer=on --srt=on --gb28181=on --apm=on --h265=on --sys-ffmpeg=on --ffmpeg-fit=off && make
 
 FROM rockylinux:9 AS rocky9-ansi-no-ffmpeg
 COPY . /srs
@@ -50,9 +50,9 @@ RUN dnf makecache -y \
  && dnf config-manager --set-enabled crb \
  && dnf -y install epel-release \
  && dnf -y groupinstall "Development Tools" \
- && dnf install -y wget ca-certificates which automake autoconf cmake tcl nasm yasm perl unzip patch xz zlib-devel libasan \
+ && dnf install -y wget ca-certificates which automake autoconf cmake tcl nasm yasm perl unzip patch xz zlib-devel ffmpeg-devel libasan \
  && update-ca-trust && dnf clean all
-RUN cd /srs/trunk && ./configure --sanitizer=on --srt=off --gb28181=off --cxx11=off --cxx14=off --ffmpeg-fit=off && make
+RUN cd /srs/trunk && ./configure --sanitizer=on --srt=off --gb28181=off --cxx11=off --cxx14=off --sys-ffmpeg=on --ffmpeg-fit=off && make
 
 ########################################################
 
@@ -150,15 +150,15 @@ COPY . /srs
 RUN apt-get update \
  && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
     wget ca-certificates build-essential pkg-config git automake autoconf libtool cmake nasm yasm perl unzip xz-utils patch tclsh \
-    libopus-dev \
+    libopus-dev libssl-dev \
  && rm -rf /var/lib/apt/lists/*
-RUN cd /srs/trunk && ./configure --sanitizer=on --ffmpeg-opus=on && make
+RUN cd /srs/trunk && ./configure --sanitizer=on --ffmpeg-opus=on --sys-ssl=on && make
 
 FROM --platform=$TARGETPLATFORM ubuntu:24.04 AS ubuntu24-cache-cross-aarch64
 COPY . /srs
 RUN apt-get update \
  && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
     wget ca-certificates build-essential pkg-config git automake autoconf libtool cmake nasm yasm perl unzip xz-utils patch tclsh \
-    libopus-dev \
+    libopus-dev libssl-dev \
  && rm -rf /var/lib/apt/lists/*
-RUN cd /srs/trunk && ./configure --sanitizer=on --ffmpeg-opus=on && make
+RUN cd /srs/trunk && ./configure --sanitizer=on --ffmpeg-opus=on --sys-ssl=on && make

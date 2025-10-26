@@ -18,6 +18,17 @@
 extern "C" {
 #endif
 
+#include <libavutil/version.h>
+
+// Select FFmpeg audio channel layout API.
+// FFmpeg 5.x (libavutil >= 57) introduces AVChannelLayout and ch_layout fields.
+// Older versions use channel_layout (uint64_t) and channels (int).
+#if LIBAVUTIL_VERSION_MAJOR >= 57
+#define SRS_USE_FFMPEG_CH_LAYOUT 1
+#else
+#define SRS_USE_FFMPEG_CH_LAYOUT 0
+#endif
+
 #include <libavcodec/avcodec.h>
 #include <libavutil/audio_fifo.h>
 #include <libavutil/channel_layout.h>

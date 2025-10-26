@@ -219,10 +219,16 @@ srs_error_t SrsAudioTranscoder::init_dec(SrsAudioCodecId src_codec)
         return srs_error_new(ERROR_RTC_RTP_MUXER, "Could not open codec");
     }
 
-    // Ensure decoder channel layout is initialized for newer FFmpeg APIs.
+    // Ensure decoder channel layout is initialized.
+#if SRS_USE_FFMPEG_CH_LAYOUT
     if (dec_->ch_layout.nb_channels > 0 && dec_->ch_layout.u.mask == 0) {
         av_channel_layout_default(&dec_->ch_layout, dec_->ch_layout.nb_channels);
     }
+#else
+    if (dec_->channel_layout == 0 && dec_->channels > 0) {
+        dec_->channel_layout = av_get_default_channel_layout(dec_->channels);
+    }
+#endif
 
     dec_frame_ = av_frame_alloc();
     if (!dec_frame_) {
@@ -251,8 +257,14 @@ srs_error_t SrsAudioTranscoder::init_enc(SrsAudioCodecId dst_codec, int dst_chan
     }
 
     enc_->sample_rate = dst_samplerate;
-    // Initialize encoder channel layout for FFmpeg >= 6.1.
+#if SRS_USE_FFMPEG_CH_LAYOUT
+    // Initialize encoder channel layout for FFmpeg with AVChannelLayout.
     av_channel_layout_default(&enc_->ch_layout, dst_channels);
+#else
+    // Initialize encoder channel layout for legacy FFmpeg.
+    enc_->channel_layout = av_get_default_channel_layout(dst_channels);
+    enc_->channels = dst_channels;
+#endif
     enc_->bit_rate = dst_bit_rate;
     enc_->sample_fmt = codec->sample_fmts[0];
     enc_->time_base.num = 1;
@@ -280,7 +292,12 @@ srs_error_t SrsAudioTranscoder::init_enc(SrsAudioCodecId dst_codec, int dst_chan
     }
     enc_frame_->format = enc_->sample_fmt;
     enc_frame_->nb_samples = enc_->frame_size;
+#if SRS_USE_FFMPEG_CH_LAYOUT
     enc_frame_->ch_layout = enc_->ch_layout;
+#else
+    enc_frame_->channel_layout = enc_->channel_layout;
+    enc_frame_->channels = enc_->channels;
+#endif
 
     if (av_frame_get_buffer(enc_frame_, 0) < 0) {
         return srs_error_new(ERROR_RTC_RTP_MUXER, "Could not get audio frame buffer");
@@ -297,9 +314,18 @@ srs_error_t SrsAudioTranscoder::init_enc(SrsAudioCodecId dst_codec, int dst_chan
 
 srs_error_t SrsAudioTranscoder::init_swr(AVCodecContext *decoder)
 {
-    // Use new swresample API with AVChannelLayout for FFmpeg >= 6.1.
+#if SRS_USE_FFMPEG_CH_LAYOUT
+    // Use new swresample API with AVChannelLayout.
     swr_alloc_set_opts2(&swr_, &enc_->ch_layout, enc_->sample_fmt, enc_->sample_rate,
                         &decoder->ch_layout, decoder->sample_fmt, decoder->sample_rate, 0, NULL);
+#else
+    // Use legacy swresample API with channel_layout and channels.
+    swr_ = swr_alloc_set_opts(NULL,
+                              enc_->channel_layout, enc_->sample_fmt, enc_->sample_rate,
+                              decoder->channel_layout ? decoder->channel_layout : av_get_default_channel_layout(decoder->channels),
+                              decoder->sample_fmt, decoder->sample_rate,
+                              0, NULL);
+#endif
     if (!swr_) {
         return srs_error_new(ERROR_RTC_RTP_MUXER, "alloc swr");
     }
@@ -315,13 +341,18 @@ srs_error_t SrsAudioTranscoder::init_swr(AVCodecContext *decoder)
      * Each pointer will later point to the audio samples of the corresponding
      * channels (although it may be NULL for interleaved formats).
      */
-    if (!(swr_data_ = (uint8_t **)calloc(enc_->ch_layout.nb_channels, sizeof(*swr_data_)))) {
+#if SRS_USE_FFMPEG_CH_LAYOUT
+    int enc_channels = enc_->ch_layout.nb_channels;
+#else
+    int enc_channels = enc_->channels;
+#endif
+    if (!(swr_data_ = (uint8_t **)calloc(enc_channels, sizeof(*swr_data_)))) {
         return srs_error_new(ERROR_RTC_RTP_MUXER, "alloc swr buffer");
     }
 
     /* Allocate memory for the samples of all channels in one consecutive
      * block for convenience. */
-    if ((error = av_samples_alloc(swr_data_, NULL, enc_->ch_layout.nb_channels, enc_->frame_size, enc_->sample_fmt, 0)) < 0) {
+    if ((error = av_samples_alloc(swr_data_, NULL, enc_channels, enc_->frame_size, enc_->sample_fmt, 0)) < 0) {
         return srs_error_new(ERROR_RTC_RTP_MUXER, "alloc swr buffer(%d:%s)", error,
                              av_make_error_string(err_buf, AV_ERROR_MAX_STRING_SIZE, error));
     }
@@ -331,7 +362,12 @@ srs_error_t SrsAudioTranscoder::init_swr(AVCodecContext *decoder)
 
 srs_error_t SrsAudioTranscoder::init_fifo()
 {
-    if (!(fifo_ = av_audio_fifo_alloc(enc_->sample_fmt, enc_->ch_layout.nb_channels, 1))) {
+#if SRS_USE_FFMPEG_CH_LAYOUT
+    int enc_channels = enc_->ch_layout.nb_channels;
+#else
+    int enc_channels = enc_->channels;
+#endif
+    if (!(fifo_ = av_audio_fifo_alloc(enc_->sample_fmt, enc_channels, 1))) {
         return srs_error_new(ERROR_RTC_RTP_MUXER, "Could not allocate FIFO");
     }
     return srs_success;

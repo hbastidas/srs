@@ -1,80 +1,129 @@
 ########################################################
-FROM ossrs/srs:dev-cache AS centos7-baseline
+FROM rockylinux:9 AS centos7-baseline
 COPY . /srs
-RUN yum makecache fast && yum install -y wget ca-certificates && update-ca-trust && yum clean all
+RUN dnf makecache -y \
+ && dnf -y groupinstall "Development Tools" \
+ && dnf install -y wget ca-certificates which automake autoconf cmake tcl nasm yasm perl unzip patch \
+ && update-ca-trust && dnf clean all
 RUN cd /srs/trunk && ./configure --sanitizer=on --srt=off --gb28181=off && make
 
-FROM ossrs/srs:dev-cache AS centos7-no-webrtc
+FROM rockylinux:9 AS centos7-no-webrtc
 COPY . /srs
-RUN yum makecache fast && yum install -y wget ca-certificates && update-ca-trust && yum clean all
+RUN dnf makecache -y \
+ && dnf -y groupinstall "Development Tools" \
+ && dnf install -y wget ca-certificates which automake autoconf cmake tcl nasm yasm perl unzip patch \
+ && update-ca-trust && dnf clean all
 RUN cd /srs/trunk && ./configure --sanitizer=on --srt=off --gb28181=off --rtc=off && make
 
-FROM ossrs/srs:dev-cache AS centos7-no-asm
+FROM rockylinux:9 AS centos7-no-asm
 COPY . /srs
-RUN yum makecache fast && yum install -y wget ca-certificates && update-ca-trust && yum clean all
+RUN dnf makecache -y \
+ && dnf -y groupinstall "Development Tools" \
+ && dnf install -y wget ca-certificates which automake autoconf cmake tcl nasm yasm perl unzip patch \
+ && update-ca-trust && dnf clean all
 RUN cd /srs/trunk && ./configure --sanitizer=on --srt=off --gb28181=off --nasm=off --srtp-nasm=off && make
 
-FROM ossrs/srs:dev-cache AS centos7-all
+FROM rockylinux:9 AS centos7-all
 COPY . /srs
-RUN yum makecache fast && yum install -y wget ca-certificates && update-ca-trust && yum clean all
+RUN dnf makecache -y \
+ && dnf -y groupinstall "Development Tools" \
+ && dnf install -y wget ca-certificates which automake autoconf cmake tcl nasm yasm perl unzip patch \
+ && update-ca-trust && dnf clean all
 RUN cd /srs/trunk && ./configure --sanitizer=on --srt=on --gb28181=on --apm=on --h265=on && make
 
-FROM ossrs/srs:dev-cache AS centos7-ansi-no-ffmpeg
+FROM rockylinux:9 AS centos7-ansi-no-ffmpeg
 COPY . /srs
-RUN yum makecache fast && yum install -y wget ca-certificates && update-ca-trust && yum clean all
+RUN dnf makecache -y \
+ && dnf -y groupinstall "Development Tools" \
+ && dnf install -y wget ca-certificates which automake autoconf cmake tcl nasm yasm perl unzip patch \
+ && update-ca-trust && dnf clean all
 RUN cd /srs/trunk && ./configure --sanitizer=on --srt=off --gb28181=off --cxx11=off --cxx14=off --ffmpeg-fit=off && make
 
 ########################################################
-FROM ossrs/srs:ubuntu16-cache AS ubuntu16-baseline
+FROM ubuntu:noble AS ubuntu16-baseline
 COPY . /srs
-RUN apt-get update && apt-get install -y --no-install-recommends wget ca-certificates && rm -rf /var/lib/apt/lists/*
+RUN apt-get update \
+ && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+    wget ca-certificates build-essential pkg-config git automake autoconf libtool cmake nasm yasm perl unzip patch tclsh \
+ && rm -rf /var/lib/apt/lists/*
 RUN cd /srs/trunk && ./configure --sanitizer=on --srt=off --gb28181=off && make
 
-FROM ossrs/srs:ubuntu16-cache AS ubuntu16-all
+FROM ubuntu:noble AS ubuntu16-all
 COPY . /srs
-RUN apt-get update && apt-get install -y --no-install-recommends wget ca-certificates && rm -rf /var/lib/apt/lists/*
+RUN apt-get update \
+ && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+    wget ca-certificates build-essential pkg-config git automake autoconf libtool cmake nasm yasm perl unzip patch tclsh \
+ && rm -rf /var/lib/apt/lists/*
 RUN cd /srs/trunk && ./configure --sanitizer=on --srt=on --gb28181=on && make
 
 ########################################################
-FROM ossrs/srs:ubuntu18-cache AS ubuntu18-baseline
+FROM ubuntu:noble AS ubuntu18-baseline
 COPY . /srs
-RUN apt-get update && apt-get install -y --no-install-recommends wget ca-certificates && rm -rf /var/lib/apt/lists/*
+RUN apt-get update \
+ && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+    wget ca-certificates build-essential pkg-config git automake autoconf libtool cmake nasm yasm perl unzip patch tclsh \
+ && rm -rf /var/lib/apt/lists/*
 RUN cd /srs/trunk && ./configure --sanitizer=on --srt=off --gb28181=off && make
 
-FROM ossrs/srs:ubuntu18-cache AS ubuntu18-all
+FROM ubuntu:noble AS ubuntu18-all
 COPY . /srs
-RUN apt-get update && apt-get install -y --no-install-recommends wget ca-certificates && rm -rf /var/lib/apt/lists/*
+RUN apt-get update \
+ && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+    wget ca-certificates build-essential pkg-config git automake autoconf libtool cmake nasm yasm perl unzip patch tclsh \
+ && rm -rf /var/lib/apt/lists/*
 RUN cd /srs/trunk && ./configure --sanitizer=on --srt=on --gb28181=on && make
 
 ########################################################
-FROM ossrs/srs:ubuntu20-cache AS ubuntu20-baseline
+FROM ubuntu:noble AS ubuntu20-baseline
 COPY . /srs
-RUN apt-get update && apt-get install -y --no-install-recommends wget ca-certificates && rm -rf /var/lib/apt/lists/*
+RUN apt-get update \
+ && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+    wget ca-certificates build-essential pkg-config git automake autoconf libtool cmake nasm yasm perl unzip patch tclsh \
+ && rm -rf /var/lib/apt/lists/*
 RUN cd /srs/trunk && ./configure --sanitizer=on --srt=off --gb28181=off && make
 
-FROM ossrs/srs:ubuntu20-cache AS ubuntu20-all
+FROM ubuntu:noble AS ubuntu20-all
 COPY . /srs
-RUN apt-get update && apt-get install -y --no-install-recommends wget ca-certificates && rm -rf /var/lib/apt/lists/*
+RUN apt-get update \
+ && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+    wget ca-certificates build-essential pkg-config git automake autoconf libtool cmake nasm yasm perl unzip patch tclsh \
+ && rm -rf /var/lib/apt/lists/*
 RUN cd /srs/trunk && ./configure --sanitizer=on --srt=on --gb28181=on --apm=on --h265=on && make
 
 ########################################################
-FROM ossrs/srs:ubuntu16-cache-cross-arm AS ubuntu16-cache-cross-armv7
+FROM ubuntu:noble AS ubuntu16-cache-cross-armv7
 COPY . /srs
-RUN apt-get update && apt-get install -y --no-install-recommends wget ca-certificates && rm -rf /var/lib/apt/lists/*
-RUN cd /srs/trunk && ./configure --sanitizer=on --cross-build --cross-prefix=arm-linux-gnueabihf- && make
+RUN apt-get update \
+ && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+    wget ca-certificates build-essential pkg-config git automake autoconf libtool cmake nasm yasm perl unzip patch tclsh \
+    gcc-arm-linux-gnueabihf g++-arm-linux-gnueabihf \
+ && rm -rf /var/lib/apt/lists/*
+RUN cd /srs/trunk && ./configure --sanitizer=on --cross-build --cross-prefix=arm-linux-gnueabihf- --ffmpeg-opus=on && make
 
-FROM ossrs/srs:ubuntu16-cache-cross-aarch64 AS ubuntu16-cache-cross-aarch64
+FROM ubuntu:noble AS ubuntu16-cache-cross-aarch64
 COPY . /srs
-RUN apt-get update && apt-get install -y --no-install-recommends wget ca-certificates && rm -rf /var/lib/apt/lists/*
-RUN cd /srs/trunk && ./configure --sanitizer=on --cross-build --cross-prefix=aarch64-linux-gnu- && make
+RUN apt-get update \
+ && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+    wget ca-certificates build-essential pkg-config git automake autoconf libtool cmake nasm yasm perl unzip patch tclsh \
+    gcc-aarch64-linux-gnu g++-aarch64-linux-gnu \
+ && rm -rf /var/lib/apt/lists/*
+RUN cd /srs/trunk && ./configure --sanitizer=on --cross-build --cross-prefix=aarch64-linux-gnu- --ffmpeg-opus=on && make
 
 ########################################################
-FROM ossrs/srs:ubuntu20-cache-cross-arm AS ubuntu20-cache-cross-armv7
+FROM ubuntu:noble AS ubuntu20-cache-cross-armv7
 COPY . /srs
-RUN apt-get update && apt-get install -y --no-install-recommends wget ca-certificates && rm -rf /var/lib/apt/lists/*
-RUN cd /srs/trunk && ./configure --sanitizer=on --cross-build --cross-prefix=arm-linux-gnueabihf- && make
+RUN apt-get update \
+ && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+    wget ca-certificates build-essential pkg-config git automake autoconf libtool cmake nasm yasm perl unzip patch tclsh \
+    gcc-arm-linux-gnueabihf g++-arm-linux-gnueabihf \
+ && rm -rf /var/lib/apt/lists/*
+RUN cd /srs/trunk && ./configure --sanitizer=on --cross-build --cross-prefix=arm-linux-gnueabihf- --ffmpeg-opus=on && make
 
-FROM ossrs/srs:ubuntu20-cache-cross-aarch64 AS ubuntu20-cache-cross-aarch64
+FROM ubuntu:noble AS ubuntu20-cache-cross-aarch64
 COPY . /srs
-RUN apt-get update && apt-get install -y --no-install-recommends wget ca-certificates && rm -rf /var/lib/apt/lists/*
-RUN cd /srs/trunk && ./configure --sanitizer=on --cross-build --cross-prefix=aarch64-linux-gnu- && make
+RUN apt-get update \
+ && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+    wget ca-certificates build-essential pkg-config git automake autoconf libtool cmake nasm yasm perl unzip patch tclsh \
+    gcc-aarch64-linux-gnu g++-aarch64-linux-gnu \
+ && rm -rf /var/lib/apt/lists/*
+RUN cd /srs/trunk && ./configure --sanitizer=on --cross-build --cross-prefix=aarch64-linux-gnu- --ffmpeg-opus=on && make

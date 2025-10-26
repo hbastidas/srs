@@ -148,6 +148,9 @@ RUN cd /srs/trunk && ./configure --sanitizer=on --cross-build --cross-prefix=aar
 FROM ubuntu:24.04 AS ubuntu24-cache-cross-armv7
 COPY . /srs
 RUN dpkg --add-architecture armhf \
+ && printf "deb [arch=armhf] http://ports.ubuntu.com/ubuntu-ports noble main restricted universe multiverse\n" > /etc/apt/sources.list.d/armhf.list \
+ && printf "deb [arch=armhf] http://ports.ubuntu.com/ubuntu-ports noble-updates main restricted universe multiverse\n" >> /etc/apt/sources.list.d/armhf.list \
+ && printf "deb [arch=armhf] http://ports.ubuntu.com/ubuntu-ports noble-security main restricted universe multiverse\n" >> /etc/apt/sources.list.d/armhf.list \
  && apt-get update \
  && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
     wget ca-certificates build-essential pkg-config git automake autoconf libtool cmake nasm yasm perl unzip xz-utils patch tclsh \
@@ -159,6 +162,9 @@ RUN cd /srs/trunk && ./configure --sanitizer=on --cross-build --cross-prefix=arm
 FROM ubuntu:24.04 AS ubuntu24-cache-cross-aarch64
 COPY . /srs
 RUN dpkg --add-architecture arm64 \
+ && printf "deb [arch=arm64] http://ports.ubuntu.com/ubuntu-ports noble main restricted universe multiverse\n" > /etc/apt/sources.list.d/arm64.list \
+ && printf "deb [arch=arm64] http://ports.ubuntu.com/ubuntu-ports noble-updates main restricted universe multiverse\n" >> /etc/apt/sources.list.d/arm64.list \
+ && printf "deb [arch=arm64] http://ports.ubuntu.com/ubuntu-ports noble-security main restricted universe multiverse\n" >> /etc/apt/sources.list.d/arm64.list \
  && apt-get update \
  && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
     wget ca-certificates build-essential pkg-config git automake autoconf libtool cmake nasm yasm perl unzip xz-utils patch tclsh \

@@ -6,7 +6,7 @@ RUN dnf makecache -y \
  && dnf config-manager --set-enabled crb \
  && dnf -y install epel-release \
  && dnf -y groupinstall "Development Tools" \
- && dnf install -y wget ca-certificates which automake autoconf cmake tcl nasm yasm perl unzip patch \
+ && dnf install -y wget ca-certificates which automake autoconf cmake tcl nasm yasm perl unzip patch xz libasan \
  && update-ca-trust && dnf clean all
 RUN cd /srs/trunk && ./configure --sanitizer=on --srt=off --gb28181=off && make
 
@@ -17,7 +17,7 @@ RUN dnf makecache -y \
  && dnf config-manager --set-enabled crb \
  && dnf -y install epel-release \
  && dnf -y groupinstall "Development Tools" \
- && dnf install -y wget ca-certificates which automake autoconf cmake tcl nasm yasm perl unzip patch \
+ && dnf install -y wget ca-certificates which automake autoconf cmake tcl nasm yasm perl unzip patch libasan \
  && update-ca-trust && dnf clean all
 RUN cd /srs/trunk && ./configure --sanitizer=on --srt=off --gb28181=off --rtc=off && make
 
@@ -28,7 +28,7 @@ RUN dnf makecache -y \
  && dnf config-manager --set-enabled crb \
  && dnf -y install epel-release \
  && dnf -y groupinstall "Development Tools" \
- && dnf install -y wget ca-certificates which automake autoconf cmake tcl nasm yasm perl unzip patch \
+ && dnf install -y wget ca-certificates which automake autoconf cmake tcl nasm yasm perl unzip patch libasan \
  && update-ca-trust && dnf clean all
 RUN cd /srs/trunk && ./configure --sanitizer=on --srt=off --gb28181=off --nasm=off --srtp-nasm=off && make
 
@@ -39,7 +39,7 @@ RUN dnf makecache -y \
  && dnf config-manager --set-enabled crb \
  && dnf -y install epel-release \
  && dnf -y groupinstall "Development Tools" \
- && dnf install -y wget ca-certificates which automake autoconf cmake tcl nasm yasm perl unzip patch \
+ && dnf install -y wget ca-certificates which automake autoconf cmake tcl nasm yasm perl unzip patch libasan \
  && update-ca-trust && dnf clean all
 RUN cd /srs/trunk && ./configure --sanitizer=on --srt=on --gb28181=on --apm=on --h265=on && make
 
@@ -50,7 +50,7 @@ RUN dnf makecache -y \
  && dnf config-manager --set-enabled crb \
  && dnf -y install epel-release \
  && dnf -y groupinstall "Development Tools" \
- && dnf install -y wget ca-certificates which automake autoconf cmake tcl nasm yasm perl unzip patch \
+ && dnf install -y wget ca-certificates which automake autoconf cmake tcl nasm yasm perl unzip patch libasan \
  && update-ca-trust && dnf clean all
 RUN cd /srs/trunk && ./configure --sanitizer=on --srt=off --gb28181=off --cxx11=off --cxx14=off --ffmpeg-fit=off && make
 
@@ -61,7 +61,7 @@ FROM ubuntu:20.04 AS ubuntu20-baseline
 COPY . /srs
 RUN apt-get update \
  && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
-    wget ca-certificates build-essential pkg-config git automake autoconf libtool cmake nasm yasm perl unzip patch tclsh \
+    wget ca-certificates build-essential pkg-config git automake autoconf libtool cmake nasm yasm perl unzip xz-utils patch tclsh \
  && rm -rf /var/lib/apt/lists/*
 RUN cd /srs/trunk && ./configure --sanitizer=on --srt=off --gb28181=off && make
 
@@ -69,7 +69,7 @@ FROM ubuntu:20.04 AS ubuntu20-all
 COPY . /srs
 RUN apt-get update \
  && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
-    wget ca-certificates build-essential pkg-config git automake autoconf libtool cmake nasm yasm perl unzip patch tclsh \
+    wget ca-certificates build-essential pkg-config git automake autoconf libtool cmake nasm yasm perl unzip xz-utils patch tclsh \
  && rm -rf /var/lib/apt/lists/*
 RUN cd /srs/trunk && ./configure --sanitizer=on --srt=on --gb28181=on --apm=on --h265=on && make
 
@@ -78,7 +78,7 @@ FROM ubuntu:22.04 AS ubuntu22-baseline
 COPY . /srs
 RUN apt-get update \
  && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
-    wget ca-certificates build-essential pkg-config git automake autoconf libtool cmake nasm yasm perl unzip patch tclsh \
+    wget ca-certificates build-essential pkg-config git automake autoconf libtool cmake nasm yasm perl unzip xz-utils patch tclsh \
  && rm -rf /var/lib/apt/lists/*
 RUN cd /srs/trunk && ./configure --sanitizer=on --srt=off --gb28181=off && make
 
@@ -86,7 +86,7 @@ FROM ubuntu:22.04 AS ubuntu22-all
 COPY . /srs
 RUN apt-get update \
  && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
-    wget ca-certificates build-essential pkg-config git automake autoconf libtool cmake nasm yasm perl unzip patch tclsh \
+    wget ca-certificates build-essential pkg-config git automake autoconf libtool cmake nasm yasm perl unzip xz-utils patch tclsh \
  && rm -rf /var/lib/apt/lists/*
 RUN cd /srs/trunk && ./configure --sanitizer=on --srt=on --gb28181=on && make
 
@@ -95,7 +95,7 @@ FROM ubuntu:24.04 AS ubuntu24-baseline
 COPY . /srs
 RUN apt-get update \
  && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
-    wget ca-certificates build-essential pkg-config git automake autoconf libtool cmake nasm yasm perl unzip patch tclsh \
+    wget ca-certificates build-essential pkg-config git automake autoconf libtool cmake nasm yasm perl unzip xz-utils patch tclsh \
  && rm -rf /var/lib/apt/lists/*
 RUN cd /srs/trunk && ./configure --sanitizer=on --srt=off --gb28181=off && make
 
@@ -103,7 +103,7 @@ FROM ubuntu:24.04 AS ubuntu24-all
 COPY . /srs
 RUN apt-get update \
  && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
-    wget ca-certificates build-essential pkg-config git automake autoconf libtool cmake nasm yasm perl unzip patch tclsh \
+    wget ca-certificates build-essential pkg-config git automake autoconf libtool cmake nasm yasm perl unzip xz-utils patch tclsh \
  && rm -rf /var/lib/apt/lists/*
 RUN cd /srs/trunk && ./configure --sanitizer=on --srt=on --gb28181=on && make
 
@@ -111,7 +111,7 @@ FROM ubuntu:20.04 AS ubuntu20-cache-cross-armv7
 COPY . /srs
 RUN apt-get update \
  && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
-    wget ca-certificates build-essential pkg-config git automake autoconf libtool cmake nasm yasm perl unzip patch tclsh \
+    wget ca-certificates build-essential pkg-config git automake autoconf libtool cmake nasm yasm perl unzip xz-utils patch tclsh \
     gcc-arm-linux-gnueabihf g++-arm-linux-gnueabihf \
  && rm -rf /var/lib/apt/lists/*
 RUN cd /srs/trunk && ./configure --sanitizer=on --cross-build --cross-prefix=arm-linux-gnueabihf- --ffmpeg-opus=on && make
@@ -120,7 +120,7 @@ FROM ubuntu:20.04 AS ubuntu20-cache-cross-aarch64
 COPY . /srs
 RUN apt-get update \
  && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
-    wget ca-certificates build-essential pkg-config git automake autoconf libtool cmake nasm yasm perl unzip patch tclsh \
+    wget ca-certificates build-essential pkg-config git automake autoconf libtool cmake nasm yasm perl unzip xz-utils patch tclsh \
     gcc-aarch64-linux-gnu g++-aarch64-linux-gnu \
  && rm -rf /var/lib/apt/lists/*
 RUN cd /srs/trunk && ./configure --sanitizer=on --cross-build --cross-prefix=aarch64-linux-gnu- --ffmpeg-opus=on && make
@@ -130,7 +130,7 @@ FROM ubuntu:22.04 AS ubuntu22-cache-cross-armv7
 COPY . /srs
 RUN apt-get update \
  && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
-    wget ca-certificates build-essential pkg-config git automake autoconf libtool cmake nasm yasm perl unzip patch tclsh \
+    wget ca-certificates build-essential pkg-config git automake autoconf libtool cmake nasm yasm perl unzip xz-utils patch tclsh \
     gcc-arm-linux-gnueabihf g++-arm-linux-gnueabihf \
  && rm -rf /var/lib/apt/lists/*
 RUN cd /srs/trunk && ./configure --sanitizer=on --cross-build --cross-prefix=arm-linux-gnueabihf- --ffmpeg-opus=on && make
@@ -139,7 +139,7 @@ FROM ubuntu:22.04 AS ubuntu22-cache-cross-aarch64
 COPY . /srs
 RUN apt-get update \
  && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
-    wget ca-certificates build-essential pkg-config git automake autoconf libtool cmake nasm yasm perl unzip patch tclsh \
+    wget ca-certificates build-essential pkg-config git automake autoconf libtool cmake nasm yasm perl unzip xz-utils patch tclsh \
     gcc-aarch64-linux-gnu g++-aarch64-linux-gnu \
  && rm -rf /var/lib/apt/lists/*
 RUN cd /srs/trunk && ./configure --sanitizer=on --cross-build --cross-prefix=aarch64-linux-gnu- --ffmpeg-opus=on && make
@@ -147,18 +147,22 @@ RUN cd /srs/trunk && ./configure --sanitizer=on --cross-build --cross-prefix=aar
 ########################################################
 FROM ubuntu:24.04 AS ubuntu24-cache-cross-armv7
 COPY . /srs
-RUN apt-get update \
+RUN dpkg --add-architecture armhf \
+ && apt-get update \
  && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
-    wget ca-certificates build-essential pkg-config git automake autoconf libtool cmake nasm yasm perl unzip patch tclsh \
-    gcc-arm-linux-gnueabihf g++-arm-linux-gnueabihf \
+    wget ca-certificates build-essential pkg-config git automake autoconf libtool cmake nasm yasm perl unzip xz-utils patch tclsh \
+    gcc-arm-linux-gnueabihf g++-arm-linux-gnueabihf libopus-dev:armhf \
  && rm -rf /var/lib/apt/lists/*
+ENV PKG_CONFIG_LIBDIR=/usr/lib/arm-linux-gnueabihf/pkgconfig:/usr/lib/pkgconfig:/usr/share/pkgconfig
 RUN cd /srs/trunk && ./configure --sanitizer=on --cross-build --cross-prefix=arm-linux-gnueabihf- --ffmpeg-opus=on && make
 
 FROM ubuntu:24.04 AS ubuntu24-cache-cross-aarch64
 COPY . /srs
-RUN apt-get update \
+RUN dpkg --add-architecture arm64 \
+ && apt-get update \
  && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
-    wget ca-certificates build-essential pkg-config git automake autoconf libtool cmake nasm yasm perl unzip patch tclsh \
-    gcc-aarch64-linux-gnu g++-aarch64-linux-gnu \
+    wget ca-certificates build-essential pkg-config git automake autoconf libtool cmake nasm yasm perl unzip xz-utils patch tclsh \
+    gcc-aarch64-linux-gnu g++-aarch64-linux-gnu libopus-dev:arm64 \
  && rm -rf /var/lib/apt/lists/*
+ENV PKG_CONFIG_LIBDIR=/usr/lib/aarch64-linux-gnu/pkgconfig:/usr/lib/pkgconfig:/usr/share/pkgconfig
 RUN cd /srs/trunk && ./configure --sanitizer=on --cross-build --cross-prefix=aarch64-linux-gnu- --ffmpeg-opus=on && make

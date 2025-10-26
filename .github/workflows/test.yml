@@ -177,7 +177,7 @@ jobs:
             --build-arg IMAGE=ubuntu:24.04 \
             --build-arg DIST_IMAGE=ubuntu:24.04 \
             --build-arg INSTALLDEPENDS="" \
-            --build-arg CONFARGS="--sanitizer=on" \
+            --build-arg CONFARGS="--sanitizer=on --sys-ssl=on" \
             -f Dockerfile .
     runs-on: ubuntu-22.04
 
@@ -200,7 +200,7 @@ jobs:
             --build-arg IMAGE=ubuntu:24.04 \
             --build-arg DIST_IMAGE=ubuntu:24.04 \
             --build-arg INSTALLDEPENDS="" \
-            --build-arg CONFARGS="--sanitizer=on" \
+            --build-arg CONFARGS="--sanitizer=on --sys-ssl=on" \
             -f Dockerfile .
     runs-on: ubuntu-22.04
 
@@ -222,7 +222,7 @@ jobs:
             --output "type=image,push=false" \
             --build-arg IMAGE=ubuntu:24.04 \
             --build-arg DIST_IMAGE=ubuntu:24.04 \
-            --build-arg CONFARGS="--sanitizer=on" \
+            --build-arg CONFARGS="--sanitizer=on --sys-ssl=on" \
             -f Dockerfile .
     runs-on: ubuntu-22.04
 

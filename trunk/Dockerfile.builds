@@ -6,7 +6,7 @@ RUN dnf makecache -y \
  && dnf config-manager --set-enabled crb \
  && dnf -y install epel-release \
  && dnf -y groupinstall "Development Tools" \
- && dnf install -y wget ca-certificates which automake autoconf cmake tcl nasm yasm perl unzip patch xz libasan \
+ && dnf install -y wget ca-certificates which automake autoconf cmake tcl nasm yasm perl unzip patch xz zlib-devel libasan \
  && update-ca-trust && dnf clean all
 RUN cd /srs/trunk && ./configure --sanitizer=on --srt=off --gb28181=off && make
 
@@ -17,7 +17,7 @@ RUN dnf makecache -y \
  && dnf config-manager --set-enabled crb \
  && dnf -y install epel-release \
  && dnf -y groupinstall "Development Tools" \
- && dnf install -y wget ca-certificates which automake autoconf cmake tcl nasm yasm perl unzip patch libasan \
+ && dnf install -y wget ca-certificates which automake autoconf cmake tcl nasm yasm perl unzip patch xz zlib-devel libasan \
  && update-ca-trust && dnf clean all
 RUN cd /srs/trunk && ./configure --sanitizer=on --srt=off --gb28181=off --rtc=off && make
 
@@ -28,7 +28,7 @@ RUN dnf makecache -y \
  && dnf config-manager --set-enabled crb \
  && dnf -y install epel-release \
  && dnf -y groupinstall "Development Tools" \
- && dnf install -y wget ca-certificates which automake autoconf cmake tcl nasm yasm perl unzip patch libasan \
+ && dnf install -y wget ca-certificates which automake autoconf cmake tcl nasm yasm perl unzip patch xz zlib-devel libasan \
  && update-ca-trust && dnf clean all
 RUN cd /srs/trunk && ./configure --sanitizer=on --srt=off --gb28181=off --nasm=off --srtp-nasm=off && make
 
@@ -39,7 +39,7 @@ RUN dnf makecache -y \
  && dnf config-manager --set-enabled crb \
  && dnf -y install epel-release \
  && dnf -y groupinstall "Development Tools" \
- && dnf install -y wget ca-certificates which automake autoconf cmake tcl nasm yasm perl unzip patch libasan \
+ && dnf install -y wget ca-certificates which automake autoconf cmake tcl nasm yasm perl unzip patch xz zlib-devel libasan \
  && update-ca-trust && dnf clean all
 RUN cd /srs/trunk && ./configure --sanitizer=on --srt=on --gb28181=on --apm=on --h265=on && make
 
@@ -50,7 +50,7 @@ RUN dnf makecache -y \
  && dnf config-manager --set-enabled crb \
  && dnf -y install epel-release \
  && dnf -y groupinstall "Development Tools" \
- && dnf install -y wget ca-certificates which automake autoconf cmake tcl nasm yasm perl unzip patch libasan \
+ && dnf install -y wget ca-certificates which automake autoconf cmake tcl nasm yasm perl unzip patch xz zlib-devel libasan \
  && update-ca-trust && dnf clean all
 RUN cd /srs/trunk && ./configure --sanitizer=on --srt=off --gb28181=off --cxx11=off --cxx14=off --ffmpeg-fit=off && make
 

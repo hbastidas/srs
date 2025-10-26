@@ -31,12 +31,17 @@ jobs:
           sudo apt-get update
           sudo DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends nasm yasm
 
+      - name: Install zlib/lzma dev libs for linking
+        run: |
+          sudo apt-get update
+          sudo DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends zlib1g-dev liblzma-dev
+
       - name: Build SRS
         run: |
           echo "pwd: $(pwd), who: $(whoami)"
           docker run --rm -v $(pwd):$(pwd) -w $(pwd)/trunk ossrs/srs:ubuntu20-cache \
               bash -c "./configure && chmod 777 -R objs"
-          cd trunk && ./configure && make
+          cd trunk && LIBS="-lz -llzma" ./configure && make LIBS="-lz -llzma"
 
       - name: Perform CodeQL Analysis
         uses: github/codeql-action/analyze@515828d97454b8354517688ddc5b48402b723750 # v2.1.38

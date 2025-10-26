@@ -5,10 +5,11 @@ RUN dnf makecache -y \
  && dnf -y install dnf-plugins-core \
  && dnf config-manager --set-enabled crb \
  && dnf -y install epel-release \
+ && dnf -y install https://download1.rpmfusion.org/free/el/rpmfusion-free-release-9.noarch.rpm \
  && dnf -y groupinstall "Development Tools" \
- && dnf install -y wget ca-certificates which automake autoconf cmake tcl nasm yasm perl unzip patch xz xz-devel zlib-devel pkgconf-pkg-config libasan \
+ && dnf install -y wget ca-certificates which automake autoconf cmake tcl nasm yasm perl unzip patch xz xz-devel zlib-devel zstd-devel bzip2-devel pkgconf-pkg-config ffmpeg-devel libasan \
  && update-ca-trust && dnf clean all
-RUN cd /srs/trunk && LIBS="-lz -llzma" ./configure --sanitizer=on --srt=off --gb28181=off && make
+RUN cd /srs/trunk && ./configure --sanitizer=on --srt=off --gb28181=off --sys-ffmpeg=on --ffmpeg-fit=off && make
 
 FROM rockylinux:9 AS rocky9-no-webrtc
 COPY . /srs
@@ -16,10 +17,11 @@ RUN dnf makecache -y \
  && dnf -y install dnf-plugins-core \
  && dnf config-manager --set-enabled crb \
  && dnf -y install epel-release \
+ && dnf -y install https://download1.rpmfusion.org/free/el/rpmfusion-free-release-9.noarch.rpm \
  && dnf -y groupinstall "Development Tools" \
- && dnf install -y wget ca-certificates which automake autoconf cmake tcl nasm yasm perl unzip patch xz xz-devel zlib-devel libasan \
+ && dnf install -y wget ca-certificates which automake autoconf cmake tcl nasm yasm perl unzip patch xz xz-devel zlib-devel zstd-devel bzip2-devel ffmpeg-devel libasan \
  && update-ca-trust && dnf clean all
-RUN cd /srs/trunk && LIBS="-lz -llzma" ./configure --sanitizer=on --srt=off --gb28181=off --rtc=off && make
+RUN cd /srs/trunk && ./configure --sanitizer=on --srt=off --gb28181=off --rtc=off --sys-ffmpeg=on --ffmpeg-fit=off && make
 
 FROM rockylinux:9 AS rocky9-no-asm
 COPY . /srs
@@ -27,10 +29,11 @@ RUN dnf makecache -y \
  && dnf -y install dnf-plugins-core \
  && dnf config-manager --set-enabled crb \
  && dnf -y install epel-release \
+ && dnf -y install https://download1.rpmfusion.org/free/el/rpmfusion-free-release-9.noarch.rpm \
  && dnf -y groupinstall "Development Tools" \
- && dnf install -y wget ca-certificates which automake autoconf cmake tcl nasm yasm perl unzip patch xz xz-devel zlib-devel libasan \
+ && dnf install -y wget ca-certificates which automake autoconf cmake tcl nasm yasm perl unzip patch xz xz-devel zlib-devel ffmpeg-devel libasan \
  && update-ca-trust && dnf clean all
-RUN cd /srs/trunk && LIBS="-lz -llzma" ./configure --sanitizer=on --srt=off --gb28181=off --nasm=off --srtp-nasm=off && make
+RUN cd /srs/trunk && ./configure --sanitizer=on --srt=off --gb28181=off --nasm=off --srtp-nasm=off --sys-ffmpeg=on --ffmpeg-fit=off && make
 
 FROM rockylinux:9 AS rocky9-all
 COPY . /srs
@@ -38,10 +41,11 @@ RUN dnf makecache -y \
  && dnf -y install dnf-plugins-core \
  && dnf config-manager --set-enabled crb \
  && dnf -y install epel-release \
+ && dnf -y install https://download1.rpmfusion.org/free/el/rpmfusion-free-release-9.noarch.rpm \
  && dnf -y groupinstall "Development Tools" \
- && dnf install -y wget ca-certificates which automake autoconf cmake tcl nasm yasm perl unzip patch xz xz-devel zlib-devel libasan \
+ && dnf install -y wget ca-certificates which automake autoconf cmake tcl nasm yasm perl unzip patch xz xz-devel zlib-devel zstd-devel bzip2-devel ffmpeg-devel libasan \
  && update-ca-trust && dnf clean all
-RUN cd /srs/trunk && LIBS="-lz -llzma" ./configure --sanitizer=on --srt=on --gb28181=on --apm=on --h265=on && make
+RUN cd /srs/trunk && ./configure --sanitizer=on --srt=on --gb28181=on --apm=on --h265=on --sys-ffmpeg=on --ffmpeg-fit=off && make
 
 FROM rockylinux:9 AS rocky9-ansi-no-ffmpeg
 COPY . /srs
@@ -49,10 +53,11 @@ RUN dnf makecache -y \
  && dnf -y install dnf-plugins-core \
  && dnf config-manager --set-enabled crb \
  && dnf -y install epel-release \
+ && dnf -y install https://download1.rpmfusion.org/free/el/rpmfusion-free-release-9.noarch.rpm \
  && dnf -y groupinstall "Development Tools" \
- && dnf install -y wget ca-certificates which automake autoconf cmake tcl nasm yasm perl unzip patch xz xz-devel zlib-devel libasan \
+ && dnf install -y wget ca-certificates which automake autoconf cmake tcl nasm yasm perl unzip patch xz xz-devel zlib-devel zstd-devel bzip2-devel ffmpeg-devel libasan \
  && update-ca-trust && dnf clean all
-RUN cd /srs/trunk && LIBS="-lz -llzma" ./configure --sanitizer=on --srt=off --gb28181=off --cxx11=off --cxx14=off && make
+RUN cd /srs/trunk && ./configure --sanitizer=on --srt=off --gb28181=off --cxx11=off --cxx14=off --sys-ffmpeg=on --ffmpeg-fit=off && make
 
 ########################################################
 

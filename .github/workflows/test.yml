@@ -11,10 +11,10 @@ permissions: read-all
 # multiple-arch-armv7(13m)
 # multiple-arch-aarch64(7m)
 # fast(0s) - To limit all fastly run jobs after slow jobs.
-#     build-centos7(3m)
-#     build-ubuntu16(3m)
-#     build-ubuntu18(2m)
+#     build-rocky9(3m)
 #     build-ubuntu20(2m)
+#     build-ubuntu22(2m)
+#     build-ubuntu24(2m)
 #     build-cross-arm(3m)
 #     build-cross-aarch64(3m)
 #     multiple-arch-amd64(2m)
@@ -22,46 +22,22 @@ permissions: read-all
 
 jobs:
 
-  build-centos7:
-    name: build-centos7
+  build-rocky9:
+    name: build-rocky9
     steps:
       - name: Checkout repository
         uses: actions/checkout@ac593985615ec2ede58e132d2e21d2b1cbd6127c # v3.3.0
-      # Build for CentOS 7
-      - name: Build on CentOS7, baseline
-        run: DOCKER_BUILDKIT=1 docker build -f trunk/Dockerfile.builds --target centos7-baseline .
-      - name: Build on CentOS7, with all features
-        run: DOCKER_BUILDKIT=1 docker build -f trunk/Dockerfile.builds --target centos7-all .
-      - name: Build on CentOS7, without WebRTC
-        run: DOCKER_BUILDKIT=1 docker build -f trunk/Dockerfile.builds --target centos7-no-webrtc .
-      - name: Build on CentOS7, without ASM
-        run: DOCKER_BUILDKIT=1 docker build -f trunk/Dockerfile.builds --target centos7-no-asm .
-      - name: Build on CentOS7, C++98, no FFmpeg
-        run: DOCKER_BUILDKIT=1 docker build -f trunk/Dockerfile.builds --target centos7-ansi-no-ffmpeg .
-    runs-on: ubuntu-22.04
-
-  build-ubuntu16:
-    name: build-ubuntu16
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@ac593985615ec2ede58e132d2e21d2b1cbd6127c # v3.3.0
-      # Build for Ubuntu16
-      - name: Build on Ubuntu16, baseline
-        run: DOCKER_BUILDKIT=1 docker build -f trunk/Dockerfile.builds --target ubuntu16-baseline .
-      - name: Build on Ubuntu16, with all features
-        run: DOCKER_BUILDKIT=1 docker build -f trunk/Dockerfile.builds --target ubuntu16-all .
-    runs-on: ubuntu-22.04
-
-  build-ubuntu18:
-    name: build-ubuntu18
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@ac593985615ec2ede58e132d2e21d2b1cbd6127c # v3.3.0
-      # Build for Ubuntu18
-      - name: Build on Ubuntu18, baseline
-        run: DOCKER_BUILDKIT=1 docker build -f trunk/Dockerfile.builds --target ubuntu18-baseline .
-      - name: Build on Ubuntu18, with all features
-        run: DOCKER_BUILDKIT=1 docker build -f trunk/Dockerfile.builds --target ubuntu18-all .
+      # Build for Rocky Linux 9
+      - name: Build on RockyLinux9, baseline
+        run: DOCKER_BUILDKIT=1 docker build -f trunk/Dockerfile.builds --target rocky9-baseline .
+      - name: Build on RockyLinux9, with all features
+        run: DOCKER_BUILDKIT=1 docker build -f trunk/Dockerfile.builds --target rocky9-all .
+      - name: Build on RockyLinux9, without WebRTC
+        run: DOCKER_BUILDKIT=1 docker build -f trunk/Dockerfile.builds --target rocky9-no-webrtc .
+      - name: Build on RockyLinux9, without ASM
+        run: DOCKER_BUILDKIT=1 docker build -f trunk/Dockerfile.builds --target rocky9-no-asm .
+      - name: Build on RockyLinux9, C++98, no FFmpeg
+        run: DOCKER_BUILDKIT=1 docker build -f trunk/Dockerfile.builds --target rocky9-ansi-no-ffmpeg .
     runs-on: ubuntu-22.04
 
   build-ubuntu20:
@@ -76,15 +52,37 @@ jobs:
         run: DOCKER_BUILDKIT=1 docker build -f trunk/Dockerfile.builds --target ubuntu20-all .
     runs-on: ubuntu-22.04
 
+  build-ubuntu22:
+    name: build-ubuntu22
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@ac593985615ec2ede58e132d2e21d2b1cbd6127c # v3.3.0
+      # Build for Ubuntu22
+      - name: Build on Ubuntu22, baseline
+        run: DOCKER_BUILDKIT=1 docker build -f trunk/Dockerfile.builds --target ubuntu22-baseline .
+      - name: Build on Ubuntu22, with all features
+        run: DOCKER_BUILDKIT=1 docker build -f trunk/Dockerfile.builds --target ubuntu22-all .
+    runs-on: ubuntu-22.04
+
+  build-ubuntu24:
+    name: build-ubuntu24
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@ac593985615ec2ede58e132d2e21d2b1cbd6127c # v3.3.0
+      # Build for Ubuntu24
+      - name: Build on Ubuntu24, baseline
+        run: DOCKER_BUILDKIT=1 docker build -f trunk/Dockerfile.builds --target ubuntu24-baseline .
+      - name: Build on Ubuntu24, with all features
+        run: DOCKER_BUILDKIT=1 docker build -f trunk/Dockerfile.builds --target ubuntu24-all .
+    runs-on: ubuntu-22.04
+
   build-cross-arm:
     name: build-cross-arm
     steps:
       - name: Checkout repository
         uses: actions/checkout@ac593985615ec2ede58e132d2e21d2b1cbd6127c # v3.3.0
-      - name: Cross Build for ARMv7 on Ubuntu16
-        run: DOCKER_BUILDKIT=1 docker build -f trunk/Dockerfile.builds --target ubuntu16-cache-cross-armv7 .
-      - name: Cross Build for ARMv7 on Ubuntu20
-        run: DOCKER_BUILDKIT=1 docker build -f trunk/Dockerfile.builds --target ubuntu20-cache-cross-armv7 .
+      - name: Cross Build for ARMv7 on Ubuntu24
+        run: DOCKER_BUILDKIT=1 docker build -f trunk/Dockerfile.builds --target ubuntu24-cache-cross-armv7 .
     runs-on: ubuntu-22.04
 
   build-cross-aarch64:
@@ -92,10 +90,8 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@ac593985615ec2ede58e132d2e21d2b1cbd6127c # v3.3.0
-      - name: Cross Build for AARCH64 on Ubuntu16
-        run: DOCKER_BUILDKIT=1 docker build -f trunk/Dockerfile.builds --target ubuntu16-cache-cross-aarch64 .
-      - name: Cross Build for AARCH64 on Ubuntu20
-        run: DOCKER_BUILDKIT=1 docker build -f trunk/Dockerfile.builds --target ubuntu20-cache-cross-aarch64 .
+      - name: Cross Build for AARCH64 on Ubuntu24
+        run: DOCKER_BUILDKIT=1 docker build -f trunk/Dockerfile.builds --target ubuntu24-cache-cross-aarch64 .
     runs-on: ubuntu-22.04
 
   test:
@@ -174,12 +170,13 @@ jobs:
       # https://github.com/docker/setup-buildx-action
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@8c0edbc76e98fa90f69d9a2c020dcb50019dc325 # v2.2.1
-      - name: Build multiple archs image
+      - name: Build multiple archs image (Ubuntu 24.04)
         run: |
           docker buildx build --platform linux/arm/v7 \
             --output "type=image,push=false" \
-            --build-arg IMAGE=ossrs/srs:ubuntu20-cache \
-            --build-arg INSTALLDEPENDS="NO" \
+            --build-arg IMAGE=ubuntu:24.04 \
+            --build-arg DIST_IMAGE=ubuntu:24.04 \
+            --build-arg INSTALLDEPENDS="" \
             --build-arg CONFARGS="--sanitizer=on" \
             -f Dockerfile .
     runs-on: ubuntu-22.04
@@ -196,12 +193,13 @@ jobs:
       # https://github.com/docker/setup-buildx-action
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@8c0edbc76e98fa90f69d9a2c020dcb50019dc325 # v2.2.1
-      - name: Build multiple archs image
+      - name: Build multiple archs image (Ubuntu 24.04)
         run: |
           docker buildx build --platform linux/arm64/v8 \
             --output "type=image,push=false" \
-            --build-arg IMAGE=ossrs/srs:ubuntu20-cache \
-            --build-arg INSTALLDEPENDS="NO" \
+            --build-arg IMAGE=ubuntu:24.04 \
+            --build-arg DIST_IMAGE=ubuntu:24.04 \
+            --build-arg INSTALLDEPENDS="" \
             --build-arg CONFARGS="--sanitizer=on" \
             -f Dockerfile .
     runs-on: ubuntu-22.04
@@ -218,11 +216,12 @@ jobs:
       # https://github.com/docker/setup-buildx-action
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@8c0edbc76e98fa90f69d9a2c020dcb50019dc325 # v2.2.1
-      - name: Build multiple archs image
+      - name: Build multiple archs image (Ubuntu 24.04)
         run: |
           docker buildx build --platform linux/amd64 \
             --output "type=image,push=false" \
-            --build-arg IMAGE=ossrs/srs:ubuntu20-cache \
+            --build-arg IMAGE=ubuntu:24.04 \
+            --build-arg DIST_IMAGE=ubuntu:24.04 \
             --build-arg CONFARGS="--sanitizer=on" \
             -f Dockerfile .
     runs-on: ubuntu-22.04
@@ -231,10 +230,10 @@ jobs:
     needs:
       - coverage
       - test
-      - build-centos7
-      - build-ubuntu16
-      - build-ubuntu18
+      - build-rocky9
       - build-ubuntu20
+      - build-ubuntu22
+      - build-ubuntu24
       - build-cross-arm
       - build-cross-aarch64
       - multiple-arch-armv7

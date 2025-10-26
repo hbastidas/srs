@@ -1,6 +1,6 @@
 ARG ARCH
-ARG IMAGE=ossrs/srs:ubuntu20
-ARG DIST_IMAGE=ubuntu:focal
+ARG IMAGE=ubuntu:24.04
+ARG DIST_IMAGE=ubuntu:24.04
 FROM ${ARCH}${IMAGE} AS build
 
 ARG CONFARGS

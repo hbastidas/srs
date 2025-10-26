@@ -26,6 +26,11 @@ jobs:
         with:
           languages: ${{ matrix.language }}
 
+      - name: Install build dependencies (nasm/yasm)
+        run: |
+          sudo apt-get update
+          sudo DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends nasm yasm
+
       - name: Build SRS
         run: |
           echo "pwd: $(pwd), who: $(whoami)"

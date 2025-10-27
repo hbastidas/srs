@@ -20,7 +20,7 @@ SHELL ["/bin/bash", "-c"]
 
 # Install depends tools.
 RUN if [[ $INSTALLDEPENDS != 'NO' ]]; then \
-        apt-get update && apt-get install -y gcc make g++ patch unzip xz-utils perl git libasan5 automake pkg-config cmake tclsh nasm yasm wget ca-certificates libssl-dev; \
+        apt-get update && apt-get install -y gcc make g++ patch unzip xz-utils perl git libasan5 automake pkg-config cmake tclsh nasm yasm wget ca-certificates libssl-dev zlib1g-dev liblzma-dev; \
     fi
 
 # Copy source code to docker.

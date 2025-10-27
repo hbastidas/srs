@@ -67,6 +67,7 @@ COPY . /srs
 RUN apt-get update \
  && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
     wget ca-certificates build-essential pkg-config git automake autoconf libtool cmake nasm yasm perl unzip xz-utils patch tclsh \
+    zlib1g-dev liblzma-dev \
  && rm -rf /var/lib/apt/lists/*
 RUN cd /srs/trunk && ./configure --sanitizer=on --srt=off --gb28181=off && make
 
@@ -75,6 +76,7 @@ COPY . /srs
 RUN apt-get update \
  && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
     wget ca-certificates build-essential pkg-config git automake autoconf libtool cmake nasm yasm perl unzip xz-utils patch tclsh \
+    zlib1g-dev liblzma-dev \
  && rm -rf /var/lib/apt/lists/*
 RUN cd /srs/trunk && ./configure --sanitizer=on --srt=on --gb28181=on --apm=on --h265=on && make
 
@@ -84,6 +86,7 @@ COPY . /srs
 RUN apt-get update \
  && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
     wget ca-certificates build-essential pkg-config git automake autoconf libtool cmake nasm yasm perl unzip xz-utils patch tclsh \
+    zlib1g-dev liblzma-dev \
  && rm -rf /var/lib/apt/lists/*
 RUN cd /srs/trunk && ./configure --sanitizer=on --srt=off --gb28181=off && make
 
@@ -92,6 +95,7 @@ COPY . /srs
 RUN apt-get update \
  && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
     wget ca-certificates build-essential pkg-config git automake autoconf libtool cmake nasm yasm perl unzip xz-utils patch tclsh \
+    zlib1g-dev liblzma-dev \
  && rm -rf /var/lib/apt/lists/*
 RUN cd /srs/trunk && ./configure --sanitizer=on --srt=on --gb28181=on && make
 
@@ -101,6 +105,7 @@ COPY . /srs
 RUN apt-get update \
  && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
     wget ca-certificates build-essential pkg-config git automake autoconf libtool cmake nasm yasm perl unzip xz-utils patch tclsh \
+    zlib1g-dev liblzma-dev \
  && rm -rf /var/lib/apt/lists/*
 RUN cd /srs/trunk && ./configure --sanitizer=on --srt=off --gb28181=off && make
 
@@ -109,6 +114,7 @@ COPY . /srs
 RUN apt-get update \
  && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
     wget ca-certificates build-essential pkg-config git automake autoconf libtool cmake nasm yasm perl unzip xz-utils patch tclsh \
+    zlib1g-dev liblzma-dev \
  && rm -rf /var/lib/apt/lists/*
 RUN cd /srs/trunk && ./configure --sanitizer=on --srt=on --gb28181=on && make
 

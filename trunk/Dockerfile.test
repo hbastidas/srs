@@ -24,6 +24,17 @@ WORKDIR /srs/trunk
 # Enable sanitizer explicitly for CI/CD testing to catch memory issues.
 RUN ./configure --srt=on --gb28181=on --srt=on --rtsp=on --apm=on --utest=on --sanitizer=on --ffmpeg-opus=off --build-cache=on
 RUN make utest ${MAKEARGS}
+RUN make install ${MAKEARGS}
+
+# Make SRT headers/libs available at /usr/local for srs-bench CGO build.
+# depends.sh installs libsrt under objs/srt; srs-bench uses -I/usr/local/include and -L/usr/local/lib
+RUN set -eux; \
+    if [ -d objs/srt/include/srt ]; then \
+      mkdir -p /usr/local/include /usr/local/lib; \
+      cp -rf objs/srt/include/srt /usr/local/include/; \
+      cp -rf objs/srt/lib/* /usr/local/lib/ || true; \
+      ldconfig || true; \
+    fi
 
 # Build benchmark tool.
 RUN cd 3rdparty/srs-bench && make ${MAKEARGS}

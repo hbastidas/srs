@@ -666,8 +666,12 @@ if [[ ($SRS_FFMPEG_FIT == YES || $SRS_FFMPEG_FIT == on) && ($SRS_USE_SYS_FFMPEG 
               cd ffmpeg-7.0 && \
               # Upstream FFmpeg: keep broad defaults, just disable docs; enable NVENC and audio codecs (OPUS/AAC)
               FFMPEG_OPTIONS_UP="--disable-doc --enable-nonfree --enable-nvenc --enable-ffnvcodec --enable-encoder=h264_nvenc --enable-encoder=hevc_nvenc --enable-encoder=av1_nvenc" && \
-              # Add external OPUS and explicit AAC to support RTC audio in the single upstream build
-              FFMPEG_OPTIONS_UP="$FFMPEG_OPTIONS_UP --enable-libopus --enable-decoder=libopus --enable-encoder=libopus" && \
+              # Conditionally enable Opus: use external libopus when SRS_FFMPEG_OPUS != YES, otherwise use native opus
+              if [[ $SRS_FFMPEG_OPUS == YES ]]; then \
+                FFMPEG_OPTIONS_UP="$FFMPEG_OPTIONS_UP --enable-decoder=opus --enable-encoder=opus"; \
+              else \
+                FFMPEG_OPTIONS_UP="$FFMPEG_OPTIONS_UP --enable-libopus --enable-decoder=libopus --enable-encoder=libopus"; \
+              fi && \
               FFMPEG_OPTIONS_UP="$FFMPEG_OPTIONS_UP --enable-decoder=aac --enable-decoder=aac_fixed --enable-decoder=aac_latm --enable-encoder=aac" && \
               echo "Check ffnvcodec via pkg-config:" && PKG_CONFIG_PATH="${_PKGCFG_PATH}" pkg-config --modversion ffnvcodec && \
               env PKG_CONFIG_PATH="${_PKGCFG_PATH}" \
@@ -697,7 +701,11 @@ if [[ ($SRS_FFMPEG_FIT == YES || $SRS_FFMPEG_FIT == on) && ($SRS_USE_SYS_FFMPEG 
               cd ffmpeg-7.0 && \
               # Upstream FFmpeg without NVENC/ffnvcodec; enable needed audio codecs for RTC.
               FFMPEG_OPTIONS_NOACC="--disable-doc" && \
-              FFMPEG_OPTIONS_NOACC="$FFMPEG_OPTIONS_NOACC --enable-libopus --enable-decoder=libopus --enable-encoder=libopus" && \
+              if [[ $SRS_FFMPEG_OPUS == YES ]]; then \
+                FFMPEG_OPTIONS_NOACC="$FFMPEG_OPTIONS_NOACC --enable-decoder=opus --enable-encoder=opus"; \
+              else \
+                FFMPEG_OPTIONS_NOACC="$FFMPEG_OPTIONS_NOACC --enable-libopus --enable-decoder=libopus --enable-encoder=libopus"; \
+              fi && \
               FFMPEG_OPTIONS_NOACC="$FFMPEG_OPTIONS_NOACC --enable-decoder=aac --enable-decoder=aac_fixed --enable-decoder=aac_latm --enable-encoder=aac" && \
               env PKG_CONFIG_PATH="${_PKGCFG_PATH}" \
               ./configure --prefix=${SRS_DEPENDS_LIBS}/${SRS_PLATFORM}/3rdparty/ffmpeg \

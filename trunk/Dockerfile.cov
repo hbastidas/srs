@@ -8,7 +8,7 @@ ENV DEBIAN_FRONTEND=noninteractive
 # Build and coverage dependencies
 RUN apt-get update \
  && apt-get install -y --no-install-recommends \
-    gcc g++ make patch unzip perl git ca-certificates \
+    gcc g++ make patch unzip perl git ca-certificates wget \
     automake autoconf libtool cmake pkg-config nasm yasm xz-utils tclsh \
     zlib1g-dev liblzma-dev \
     libasan8 \

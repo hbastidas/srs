@@ -204,6 +204,11 @@ if [[ $SRS_GCOV == YES ]]; then
     SrsLinkOptions="${SrsLinkOptions} ${SrsGcov}";
 fi
 
+# Link zlib and lzma when FFmpeg fit is enabled, required by FFmpeg's codecs using zlib/lzma.
+if [[ $SRS_FFMPEG_FIT == YES ]]; then
+    SrsLinkOptions="${SrsLinkOptions} -lz -llzma";
+fi
+
 # For FFMPEG/RTC on Linux.
 if [[ $SRS_OSX != YES && $SRS_FFMPEG_FIT == YES ]]; then
     SrsLinkOptions="${SrsLinkOptions} -lrt";

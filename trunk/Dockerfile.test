@@ -8,7 +8,7 @@ ENV DEBIAN_FRONTEND=noninteractive
 # Build and test dependencies
 RUN apt-get update \
  && apt-get install -y --no-install-recommends \
-    gcc g++ make patch unzip perl git ca-certificates wget \
+    gcc g++ make patch unzip perl git ca-certificates wget libssl-dev \
     automake autoconf libtool cmake pkg-config nasm yasm xz-utils tclsh \
     zlib1g-dev liblzma-dev golang-go \
     libasan8 \
@@ -34,6 +34,13 @@ RUN set -eux; \
       cp -rf objs/srt/include/srt /usr/local/include/; \
       cp -rf objs/srt/lib/* /usr/local/lib/ || true; \
       ldconfig || true; \
+    fi
+
+# Ensure OpenSSL lib path expected by srs-bench exists
+RUN set -eux; \
+    mkdir -p /usr/local/ssl; \
+    if [ ! -d /usr/local/ssl/lib ]; then \
+      ln -s /usr/lib/x86_64-linux-gnu /usr/local/ssl/lib || true; \
     fi
 
 # Build benchmark tool.

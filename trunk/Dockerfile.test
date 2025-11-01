@@ -26,6 +26,23 @@ RUN ./configure --srt=on --gb28181=on --srt=on --rtsp=on --apm=on --utest=on --s
 RUN make utest ${MAKEARGS}
 RUN make install ${MAKEARGS}
 
+# Build and install the in-repo FFmpeg CLI so tests use our development version.
+# Default is ON; set BUILD_DEV_FFMPEG_CLI=off to skip.
+ARG BUILD_DEV_FFMPEG_CLI=on
+RUN set -eux; \
+    if [ "${BUILD_DEV_FFMPEG_CLI}" = "on" ]; then \
+      cd 3rdparty/ffmpeg-4-fit && \
+      ./configure --prefix=/usr/local \
+        --disable-debug --disable-doc \
+        || ./configure --prefix=/usr/local --disable-debug --disable-doc; \
+      make ${MAKEARGS}; \
+      # ffmpeg-4-fit Makefile installs only libs/headers; install CLI manually.
+      install -d /usr/local/bin; \
+      if [ -f ffmpeg ]; then install -m 0755 ffmpeg /usr/local/bin/ffmpeg; fi; \
+      if [ -f ffprobe ]; then install -m 0755 ffprobe /usr/local/bin/ffprobe; fi; \
+      which ffmpeg && ffmpeg -version; \
+    fi
+
 # Make SRT headers/libs available at /usr/local for srs-bench CGO build.
 # depends.sh installs libsrt under objs/srt; srs-bench uses -I/usr/local/include and -L/usr/local/lib
 RUN set -eux; \
